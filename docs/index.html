@@ -8,10 +8,8 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
-        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
         <link rel="stylesheet" href="css/qgis2web.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <link rel="stylesheet" href="css/leaflet-search.css">
         <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
         <style>
         html, body, #map {
@@ -29,7 +27,6 @@
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
-        <script src="js/L.Control.Locate.min.js"></script>
         <script src="js/multi-style-layer.js"></script>
         <script src="js/leaflet.rotatedMarker.js"></script>
         <script src="js/leaflet.pattern.js"></script>
@@ -39,27 +36,12 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
-        <script src="js/leaflet-search.js"></script>
-        <script src="data/reasPSA_1.js"></script>
+        <script src="data/LotesRurais_1.js"></script>
+        <script src="data/PropriedadesPSA_2.js"></script>
         <script>
-        var highlightLayer;
-        function highlightFeature(e) {
-            highlightLayer = e.target;
-
-            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
-              highlightLayer.setStyle({
-                color: '#328ed6',
-              });
-            } else {
-              highlightLayer.setStyle({
-                fillColor: '#328ed6',
-                fillOpacity: 1
-              });
-            }
-        }
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:4
-        }).fitBounds([[-26.19438706733319,-48.98683283801112],[-26.146745428581063,-48.94232483637931]]);
+        }).fitBounds([[-26.174388119564394,-48.979675653945435],[-26.162477491465772,-48.96221479881809]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -104,7 +86,6 @@
         var zoomControl = L.control.zoom({
             position: 'topleft'
         }).addTo(map);
-        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
@@ -119,23 +100,59 @@
         });
         layer_OpenStreetMap_0;
         map.addLayer(layer_OpenStreetMap_0);
-        function pop_reasPSA_1(feature, layer) {
-            layer.on({
-                mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
-                    }
-                },
-                mouseover: highlightFeature,
-            });
+        function pop_LotesRurais_1(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['qc_id'] !== null ? autolinker.link(String(feature.properties['qc_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td colspan="2">' + (feature.properties['iq_lote'] !== null ? autolinker.link(String(feature.properties['iq_lote']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
-                        <td colspan="2">' + (feature.properties['iq_lote'] !== null ? autolinker.link(String(feature.properties['iq_lote']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                        <td colspan="2">' + (feature.properties['st_area_sh'] !== null ? autolinker.link(String(feature.properties['st_area_sh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['st_length_'] !== null ? autolinker.link(String(feature.properties['st_length_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_LotesRurais_1_0() {
+            return {
+                pane: 'pane_LotesRurais_1',
+                opacity: 1,
+                color: 'rgba(247,36,36,0.9333333333333333)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_LotesRurais_1');
+        map.getPane('pane_LotesRurais_1').style.zIndex = 401;
+        map.getPane('pane_LotesRurais_1').style['mix-blend-mode'] = 'normal';
+        var layer_LotesRurais_1 = new L.geoJson(json_LotesRurais_1, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_LotesRurais_1',
+            layerName: 'layer_LotesRurais_1',
+            pane: 'pane_LotesRurais_1',
+            onEachFeature: pop_LotesRurais_1,
+            style: style_LotesRurais_1_0,
+        });
+        bounds_group.addLayer(layer_LotesRurais_1);
+        map.addLayer(layer_LotesRurais_1);
+        function pop_PropriedadesPSA_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="qc_id" colspan="2"><strong>qc_id</strong><br />' + (feature.properties['qc_id'] !== null ? autolinker.link(String(feature.properties['qc_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td class="visible-with-data" id="iq_lote" colspan="2"><strong>iq_lote</strong><br />' + (feature.properties['iq_lote'] !== null ? autolinker.link(String(feature.properties['iq_lote']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
                         <td class="visible-with-data" id="prp" colspan="2"><strong>prp</strong><br />' + (feature.properties['prp'] !== null ? autolinker.link(String(feature.properties['prp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
@@ -154,9 +171,9 @@
 			layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        function style_reasPSA_1_0() {
+        function style_PropriedadesPSA_2_0() {
             return {
-                pane: 'pane_reasPSA_1',
+                pane: 'pane_PropriedadesPSA_2',
                 opacity: 1,
                 color: 'rgba(0,0,255,1.0)',
                 dashArray: '',
@@ -169,9 +186,9 @@
                 interactive: true,
             }
         }
-        function style_reasPSA_1_1() {
+        function style_PropriedadesPSA_2_1() {
             return {
-                pane: 'pane_reasPSA_1',
+                pane: 'pane_PropriedadesPSA_2',
                 opacity: 1,
                 color: 'rgba(0,0,0,1.0)',
                 dashArray: '8.0,4.0,2.0,4.0',
@@ -182,20 +199,20 @@
                 interactive: true,
             }
         }
-        map.createPane('pane_reasPSA_1');
-        map.getPane('pane_reasPSA_1').style.zIndex = 401;
-        map.getPane('pane_reasPSA_1').style['mix-blend-mode'] = 'normal';
-        var layer_reasPSA_1 = new L.geoJson.multiStyle(json_reasPSA_1, {
+        map.createPane('pane_PropriedadesPSA_2');
+        map.getPane('pane_PropriedadesPSA_2').style.zIndex = 402;
+        map.getPane('pane_PropriedadesPSA_2').style['mix-blend-mode'] = 'normal';
+        var layer_PropriedadesPSA_2 = new L.geoJson.multiStyle(json_PropriedadesPSA_2, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_reasPSA_1',
-            layerName: 'layer_reasPSA_1',
-            pane: 'pane_reasPSA_1',
-            onEachFeature: pop_reasPSA_1,
-            styles: [style_reasPSA_1_0,style_reasPSA_1_1,]
+            dataVar: 'json_PropriedadesPSA_2',
+            layerName: 'layer_PropriedadesPSA_2',
+            pane: 'pane_PropriedadesPSA_2',
+            onEachFeature: pop_PropriedadesPSA_2,
+            styles: [style_PropriedadesPSA_2_0,style_PropriedadesPSA_2_1,]
         });
-        bounds_group.addLayer(layer_reasPSA_1);
-        map.addLayer(layer_reasPSA_1);
+        bounds_group.addLayer(layer_PropriedadesPSA_2);
+        map.addLayer(layer_PropriedadesPSA_2);
         var osmGeocoder = new L.Control.Geocoder({
             collapsed: true,
             position: 'topleft',
@@ -207,7 +224,8 @@
         document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
         .title += 'Search for a place';
         var overlaysTree = [
-            {label: '<img src="legend/reasPSA_1.png" /> áreas PSA', layer: layer_reasPSA_1},
+            {label: '<img src="legend/PropriedadesPSA_2.png" /> Propriedades PSA', layer: layer_PropriedadesPSA_2},
+            {label: '<img src="legend/LotesRurais_1.png" /> Lotes Rurais', layer: layer_LotesRurais_1},
             {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},]
         var lay = L.control.layers.tree(null, overlaysTree,{
             //namedToggle: true,
@@ -220,22 +238,15 @@
         });
         lay.addTo(map);
         setBounds();
-        map.addControl(new L.Control.Search({
-            layer: layer_reasPSA_1,
-            initial: false,
-            hideMarkerOnCollapse: true,
-            propertyName: 'iq_lote'}));
-        document.getElementsByClassName('search-button')[0].className +=
-         ' fa fa-binoculars';
-        resetLabels([layer_reasPSA_1]);
+        resetLabels([layer_PropriedadesPSA_2]);
         map.on("zoomend", function(){
-            resetLabels([layer_reasPSA_1]);
+            resetLabels([layer_PropriedadesPSA_2]);
         });
         map.on("layeradd", function(){
-            resetLabels([layer_reasPSA_1]);
+            resetLabels([layer_PropriedadesPSA_2]);
         });
         map.on("layerremove", function(){
-            resetLabels([layer_reasPSA_1]);
+            resetLabels([layer_PropriedadesPSA_2]);
         });
         </script>
     </body>
