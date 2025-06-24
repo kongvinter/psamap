@@ -43,21 +43,20 @@
 
       /* Estilo do título no mapa */
       .map-title {
-        display: inline-flex;
-        align-items: center;
-        font-family: 'Poppins', sans-serif;
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: #fff;
-        background: linear-gradient(135deg, rgba(0,123,255,0.9), rgba(0,200,255,0.9));
-        padding: 6px 12px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-        animation: fadeInDown 0.6s ease-out;
-        transition: transform 0.2s ease;
-      }
-      .map-title:hover {
-        transform: translateY(-2px);
+    display: inline-block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(0,123,255,0.9), rgba(0,200,255,0.9));
+    padding: 6px 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    animation: fadeInDown 0.6s ease-out;
+    transition: transform 0.2s ease;
+}
+.map-title:hover {
+    transform: translateY(-2px);
       }
 
       /* Ícone opcional à esquerda do texto */
@@ -151,14 +150,10 @@
       this.update();
       return this._div;
     };
-    title.update = function() {
-      this._div.innerHTML =
-        '<div class="map-title">' +
-          '<img src="images/icon-psa.svg" alt="" class="title-icon" />' +
-          'Áreas de Propriedades Aderidas ao Programa PSA' +
-        '</div>';
-    };
-    title.addTo(map);
+    title.update = function () {
+    this._div.innerHTML = '<h2>Áreas de Propriedades Aderidas ao Programa PSA</h2>';
+};
+title.addTo(map);
 
     // Controles de zoom e medida
     L.control.zoom({ position:'topleft' }).addTo(map);
