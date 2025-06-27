@@ -1,68 +1,38 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="css/leaflet.css">
-  <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
-  <link rel="stylesheet" href="css/qgis2web.css">
-  <link rel="stylesheet" href="css/fontawesome-all.min.css">
-  <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
-  <link rel="stylesheet" href="css/leaflet-measure.css">
-  <style>
-    /* MAPA F-S */
-    html, body, #map {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* HIDE OLD TITLE */
-    .leaflet-control.info {
-      display: none !important;
-    }
-
-    /* TITLE */
-    #titulo {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 2rem;
-      font-weight: bold;
-      color: white;
-      text-shadow:
-        -1px -1px 0 #007BFF,
-         1px -1px 0 #007BFF,
-        -1px  1px 0 #007BFF,
-         1px  1px 0 #007BFF;
-      z-index: 9999;
-      background-color: rgba(0, 0, 0, 0.4);
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      pointer-events: none;
-    }
-
-    /* Logo */
-    .map-logo {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      width: 80px;
-      opacity: 0.8;
-      z-index: 1000;
-      pointer-events: none;
-    }
-  </style>
-  <title>Propriedades Aderidas ao Programa Águas Para Sempre</title>
-</head>
-<body>
-  <!-- OVERLAY  -->
-  <div id="titulo"></div>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        /* Logo styling */
+        .map-logo {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 80px;
+            opacity: 0.8;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        </style>
+        <title>Áreas de Propriedades Aderidas ao Programa PSA</title>
+    </head>
+    <body>
         <div id="map" style="position: relative;">
             <!-- Logo positioned at bottom-left -->
             <img class="map-logo" src="images/LOGOPSA.png" alt="Logo PSA">
