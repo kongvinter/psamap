@@ -19,7 +19,7 @@
             padding: 0;
             margin: 0;
         }
-        /* Logo styling */
+        
         .map-logo {
             position: absolute;
             bottom: 10px;
@@ -34,7 +34,7 @@
     </head>
     <body>
         <div id="map" style="position: relative;">
-            <!-- Logo positioned at bottom-left -->
+            
             <img class="map-logo" src="images/LOGOPSA.png" alt="Logo PSA">
         </div>
         <script src="js/qgis2web_expressions.js"></script>
@@ -60,7 +60,7 @@
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-        // remove popup's row if "visible-with-data"
+        
         function removeEmptyRowsFromPopupContent(content, feature) {
          var tempDiv = document.createElement('div');
          tempDiv.innerHTML = content;
@@ -74,7 +74,7 @@
          }
          return tempDiv.innerHTML;
         }
-        // add class to format popup if it contains media
+        
 		function addClassToPopupIfMedia(content, popup) {
 			var tempDiv = document.createElement('div');
 			tempDiv.innerHTML = content;
