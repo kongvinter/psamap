@@ -180,16 +180,13 @@
     bounds_group.addLayer(layer_LimitePrograma);
 
     // Layer: Áreas aderidas ao PSA
-    const layer_reasaderidasaoPSA = new L.geoJson.multiStyle(json_reasaderidasaoPSA_4, {
-        styles: [
-            () => ({ color: '#000', weight: 2, fillOpacity: 0 }),
-            () => ({
-                color: '#232323',
-                weight: 1,
-                fillOpacity: 0.9,
-                fillColor: 'rgba(57,80,255,0.77)',
-            })
-        ],
+    const layer_reasaderidasaoPSA = new L.geoJson(json_reasaderidasaoPSA_4, {
+        style: () => ({
+            color: '#232323',
+            weight: 1,
+            fillOpacity: 0.9,
+            fillColor: 'rgba(57,80,255,0.77)'
+        }),
         onEachFeature: (feature, layer) => {
             const props = feature.properties;
             const popupContent = `<table>
