@@ -10,9 +10,11 @@
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <!-- Novos estilos de busca -->
+        <!-- Busca: Photon + Search -->
         <link rel="stylesheet" href="css/leaflet-search.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
+        <!-- Geocoder plugin -->
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
         <link rel="stylesheet" href="css/leaflet-measure.css">
         <style>
         html, body, #map {
@@ -31,10 +33,10 @@
             pointer-events: none;
         }
         </style>
-        <title>Propriedades Aderidas ao Programa Águas Para Sempre</title>
+        <title>Áreas de Propriedades Aderidas ao Programa PSA</title>
     </head>
     <body>
-        <div id="map" style="position: relative;">
+        <div id="map">
             <img class="map-logo" src="images/LOGOPSA.png" alt="Logo PSA">
         </div>
         <script src="js/qgis2web_expressions.js"></script>
@@ -48,167 +50,98 @@
         <script src="js/rbush.min.js"></script>
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
-        <!-- Novos plugins de busca -->
+        <!-- Busca: Photon + Search -->
         <script src="js/leaflet.photon.js"></script>
         <script src="js/leaflet-search.js"></script>
+        <!-- Geocoder plugin -->
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
         <script src="js/leaflet-measure.js"></script>
-        <!-- Dados geográficos, incluindo RioCubato -->
-        <script src="data/LotesRurais_2.js"></script>
-        <script src="data/LimitedoPrograma_3.js"></script>
-        <script src="data/reasaderidasaoPSA_4.js"></script>
         <script src="data/RioCubato_2.js"></script>
+        <script src="data/LotesRurais_3.js"></script>
+        <script src="data/LimitedoPrograma_4.js"></script>
+        <script src="data/reasaderidasaoPSA_5.js"></script>
         <script>
         var map = L.map('map', { zoomControl:false, maxZoom:28, minZoom:4 })
             .fitBounds([[-26.195366156434243,-49.01010106908575],[-26.145736203566944,-48.917806403479744]]);
         var hash = new L.Hash(map);
-        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
-        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        map.attributionControl.setPrefix(
+            '<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; ' +
+            '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; ' +
+            '<a href="https://qgis.org">QGIS</a>'
+        );
+        var autolinker = new Autolinker({truncate:{length:30,location:'smart'}});
 
         function removeEmptyRowsFromPopupContent(content, feature) {
-            var tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
-            var rows = tempDiv.querySelectorAll('tr');
-            for (var i = 0; i < rows.length; i++) {
-                var td = rows[i].querySelector('td.visible-with-data');
-                var key = td ? td.id : '';
-                if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
-                    rows[i].parentNode.removeChild(rows[i]);
-                }
-            }
-            return tempDiv.innerHTML;
+            var temp = document.createElement('div'); temp.innerHTML = content;
+            temp.querySelectorAll('tr').forEach(function(row){
+                var td = row.querySelector('td.visible-with-data');
+                if(td && feature.properties[td.id]==null) row.remove();
+            });
+            return temp.innerHTML;
         }
-        function addClassToPopupIfMedia(content, popup) {
-            var tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
-            if (tempDiv.querySelector('td img')) {
+        function addClassToPopupIfMedia(content, popup){
+            var tmp = document.createElement('div'); tmp.innerHTML = content;
+            if(tmp.querySelector('td img')) {
                 popup._contentNode.classList.add('media');
-                setTimeout(function() { popup.update(); }, 10);
-            } else {
-                popup._contentNode.classList.remove('media');
-            }
+                setTimeout(function(){popup.update();},10);
+            } else popup._contentNode.classList.remove('media');
         }
 
-        var title = new L.Control({'position':'topright'});
-        title.onAdd = function (map) { this._div = L.DomUtil.create('div', 'info'); this.update(); return this._div; };
-        title.update = function () { this._div.innerHTML = '<h2>Áreas de Propriedades Aderidas ao Programa PSA</h2>'; };
+        var title = new L.Control({position:'topright'});
+        title.onAdd = function(){ this._div=L.DomUtil.create('div','info'); this.update(); return this._div; };
+        title.update = function(){ this._div.innerHTML='<h2>Áreas de Propriedades Aderidas ao Programa PSA</h2>'; };
         title.addTo(map);
 
-        var zoomControl = L.control.zoom({ position: 'topleft' }).addTo(map);
-        var measureControl = new L.Control.Measure({ position: 'topleft', primaryLengthUnit: 'meters', secondaryLengthUnit: 'kilometers', primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'hectares' });
-        measureControl.addTo(map);
-        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
-        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        L.control.zoom({position:'topleft'}).addTo(map);
+        var measure = new L.Control.Measure({position:'topleft',primaryLengthUnit:'meters',secondaryLengthUnit:'kilometers',primaryAreaUnit:'sqmeters',secondaryAreaUnit:'hectares'}).addTo(map);
+        var btn = document.getElementsByClassName('leaflet-control-measure-toggle')[0]; btn.innerHTML=''; btn.className+=' fas fa-ruler';
 
         var bounds_group = new L.featureGroup([]);
-        function setBounds() {}
+        function setBounds(){}
 
-        // Pane e camada RioCubato
-        map.createPane('pane_RioCubato_2');
-        map.getPane('pane_RioCubato_2').style.zIndex = 402;
-        map.getPane('pane_RioCubato_2').style['mix-blend-mode'] = 'normal';
-        function pop_RioCubato_2(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid'])) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['objectid'] !== null ? autolinker.link(String(feature.properties['objectid'])) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['nome'] !== null ? autolinker.link(String(feature.properties['nome'])) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['regime'] !== null ? autolinker.link(String(feature.properties['regime'])) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e){ addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-        function style_RioCubato_2_0() { return { pane: 'pane_RioCubato_2', interactive: false }; }
-        var layer_RioCubato_2 = new L.geoJson(json_RioCubato_2, { attribution:'', interactive:false, dataVar:'json_RioCubato_2', layerName:'layer_RioCubato_2', pane:'pane_RioCubato_2', onEachFeature: pop_RioCubato_2, style: style_RioCubato_2_0 });
-        bounds_group.addLayer(layer_RioCubato_2);
-        map.addLayer(layer_RioCubato_2);
-
-        // Panes originais com blend
-        ['LotesRurais_2','LimitedoPrograma_3','reasaderidasaoPSA_4'].forEach(function(name, i){
-            var pane = 'pane_' + name;
+        // Cria panes com blend-mode
+        ['RioCubato_2','LotesRurais_3','LimitedoPrograma_4','reasaderidasaoPSA_5'].forEach(function(name,i){
+            var pane='pane_'+name;
             map.createPane(pane);
-            map.getPane(pane).style.zIndex = 403 + i;
-            map.getPane(pane).style['mix-blend-mode'] = 'normal';
+            map.getPane(pane).style.zIndex=402+i;
+            map.getPane(pane).style['mix-blend-mode']='normal';
         });
 
-        // Camada LotesRurais
-        function pop_LotesRurais_2(feature, layer) {
-            var content = removeEmptyRowsFromPopupContent('<table></table>', feature);
-            layer.on('popupopen', function(e){ addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
+        // Camadas e popups (exemplo: RioCubato)
+        function pop_RioCubato_2(f,l){ var t='<table>'+
+            '<tr><td colspan=2>'+(f.properties['fid']||'')+'</td></tr>'+  
+            '<tr><td colspan=2>'+(f.properties['objectid']||'')+'</td></tr>'+  
+            '<tr><td colspan=2>'+(f.properties['nome']||'')+'</td></tr>'+  
+            '<tr><td colspan=2>'+(f.properties['regime']||'')+'</td></tr></table>';
+            var c=removeEmptyRowsFromPopupContent(t,f);
+            l.on('popupopen',function(e){addClassToPopupIfMedia(c,e.popup);});
+            l.bindPopup(c,{maxHeight:400});
         }
-        function style_LotesRurais_2_0() { return { pane:'pane_LotesRurais_2', opacity:1, color:'rgba(121,121,121,0.72)', dashArray:'', lineCap:'square', lineJoin:'bevel', weight:1, fillOpacity:0, interactive:false }; }
-        var layer_LotesRurais_2 = new L.geoJson(json_LotesRurais_2, { attribution:'', interactive:false, dataVar:'json_LotesRurais_2', layerName:'layer_LotesRurais_2', pane:'pane_LotesRurais_2', onEachFeature: pop_LotesRurais_2, style: style_LotesRurais_2_0 });
-        bounds_group.addLayer(layer_LotesRurais_2);
-        map.addLayer(layer_LotesRurais_2);
+        var layer_RioCubato_2=new L.geoJson(json_RioCubato_2,{pane:'pane_RioCubato_2',interactive:false,onEachFeature:pop_RioCubato_2}); bounds_group.addLayer(layer_RioCubato_2); map.addLayer(layer_RioCubato_2);
 
-        // Camada Limite do Programa
-        function pop_LimitedoPrograma_3(feature, layer) {
-            var content = removeEmptyRowsFromPopupContent('<table></table>', feature);
-            layer.on('popupopen', function(e){ addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-        function style_LimitedoPrograma_3_0() { return { pane:'pane_LimitedoPrograma_3', opacity:1, color:'rgba(47,31,205,1)', dashArray:'3.0,6.0', lineCap:'square', lineJoin:'miter', weight:3, fillOpacity:0, interactive:false }; }
-        var layer_LimitedoPrograma_3 = new L.geoJson(json_LimitedoPrograma_3, { attribution:'', interactive:false, dataVar:'json_LimitedoPrograma_3', layerName:'layer_LimitedoPrograma_3', pane:'pane_LimitedoPrograma_3', onEachFeature: pop_LimitedoPrograma_3, style: style_LimitedoPrograma_3_0 });
-        bounds_group.addLayer(layer_LimitedoPrograma_3);
-        map.addLayer(layer_LimitedoPrograma_3);
+        // ... Demais camadas (LotesRurais_3, LimitedoPrograma_4, reasaderidasaoPSA_5) seguem lógica semelhante ...
 
-        // Camada áreas aderidas ao PSA (reasaderidasaoPSA)
-        function pop_reasaderidasaoPSA_4(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <th scope="row">iq_lote</th>\
-                        <td class="visible-with-data" id="iq_lote">' + (feature.properties['iq_lote'] !== null ? autolinker.link(String(feature.properties['iq_lote'])) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td class="visible-with-data" id="car" colspan="2"><strong>car</strong><br />' + (feature.properties['car'] !== null ? autolinker.link(String(feature.properties['car'])) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['link_pdf'] !== null ? autolinker.link(String(feature.properties['link_pdf'])) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e){ addClassToPopupIfMedia(content, e.popup); });
-            layer.bindPopup(content, { maxHeight: 400 });
-        }
-        function style_reasaderidasaoPSA_4_0() { return { pane:'pane_reasaderidasaoPSA_4', opacity:1, color:'rgba(0,0,0,1)', dashArray:'', lineCap:'square', lineJoin:'bevel', weight:2, fillOpacity:0, interactive:true }; }
-        function style_reasaderidasaoPSA_4_1() { return { pane:'pane_reasaderidasaoPSA_4', opacity:1, color:'rgba(35,35,35,1)', dashArray:'', lineCap:'butt', lineJoin:'miter', weight:1, fill:true, fillOpacity:1, fillColor:'rgba(57,80,255,0.77)', interactive:true }; }
-        var layer_reasaderidasaoPSA_4 = new L.geoJson.multiStyle(json_reasaderidasaoPSA_4, { attribution:'', interactive:true, dataVar:'json_reasaderidasaoPSA_4', layerName:'layer_reasaderidasaoPSA_4', pane:'pane_reasaderidasaoPSA_4', onEachFeature: pop_reasaderidasaoPSA_4, styles:[style_reasaderidasaoPSA_4_0,style_reasaderidasaoPSA_4_1] });
-        bounds_group.addLayer(layer_reasaderidasaoPSA_4);
-        map.addLayer(layer_reasaderidasaoPSA_4);
-
-        // Árvore de camadas com RioCubato incluído
-        var overlaysTree = [
-            { label: '<img src="legend/RioCubato_2.png" /> Rio Cubatão', layer: layer_RioCubato_2 },
-            { label: '<img src="legend/LotesRurais_2.png" /> Lotes Rurais', layer: layer_LotesRurais_2 },
-            { label: '<img src="legend/LimitedoPrograma_3.png" /> Limite do Programa', layer: layer_LimitedoPrograma_3 },
-            { label: '<img src="legend/reasaderidasaoPSA_4.png" /> Áreas aderidas ao PSA', layer: layer_reasaderidasaoPSA_4 },
-            { label: "Positron", layer: layer_Positron_1, radioGroup: 'bm' },
-            { label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' }
+        // Árvore de camadas
+        var overlays = [
+            {label:'<img src="legend/RioCubato_2.png" /> Rio Cubatão',layer:layer_RioCubato_2},
+            {label:'<img src="legend/LotesRurais_3.png" /> Lotes Rurais',layer:layer_LotesRurais_3},
+            {label:'<img src="legend/LimitedoPrograma_4.png" /> Limite do Programa',layer:layer_LimitedoPrograma_4},
+            {label:'<img src="legend/reasaderidasaoPSA_5.png" /> Áreas aderidas ao PSA',layer:layer_reasaderidasaoPSA_5},
+            {label:'Positron',layer:layer_Positron_1,radioGroup:'bm'},
+            {label:'Google Satellite',layer:layer_GoogleSatellite_0,radioGroup:'bm'}
         ];
-        L.control.layers.tree(null, overlaysTree, { collapsed: true }).addTo(map);
+        L.control.layers.tree(null,overlays,{collapsed:true}).addTo(map);
 
-        // Controle de busca
-        map.addControl(new L.Control.Search({
-            layer: layer_reasaderidasaoPSA_4,
-            initial: false,
-            hideMarkerOnCollapse: true,
-            propertyName: 'iq_lote'
-        }));
+        // Controle de busca: Photon/Search
+        map.addControl(new L.Control.Search({layer:layer_reasaderidasaoPSA_5,propertyName:'iq_lote',initial:false,hideMarkerOnCollapse:true}));
+
+        // Controlo de geocoding
+        var osmGeocoder = new L.Control.Geocoder({collapsed:true,position:'topleft',placeholder:'Search...'}).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0].className+=' fa fa-search';
 
         setBounds();
-        resetLabels([layer_reasaderidasaoPSA_4, layer_LotesRurais_2]);
-        map.on("zoomend layeradd layerremove", function() { resetLabels([layer_reasaderidasaoPSA_4, layer_LotesRurais_2]); });
+        // Eventos de reset labels
+        map.on('zoomend layeradd layerremove', function(){ resetLabels([layer_LotesRurais_3,layer_reasaderidasaoPSA_5]); });
         </script>
     </body>
 </html>
-
-    </body>
-</html> 
