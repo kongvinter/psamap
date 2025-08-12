@@ -1,8 +1,9 @@
-/* Botão principal */
+//* Botão principal */
 #stats-btn {
     position: absolute;
     top: 10px;
-    right: 10px;
+    left: 10px;        /* mover para a esquerda */
+    right: auto;       /* remover a referência ao right */
     background: #f5d6ba;
     border: 2px solid #5a4636;
     border-radius: 8px;
@@ -11,7 +12,9 @@
     font-size: 12px;
     cursor: pointer;
     z-index: 1000;
+    transition: background 0.3s ease;
 }
+
 #stats-btn:hover {
     background: #ffe3c6;
 }
@@ -19,17 +22,19 @@
 /* Painel */
 #stats-panel {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 50px; /* mantém espaçamento do topo */
+    left: 10px; /* trocar right por left */
     width: 320px;
-    height: 100%;
+    max-height: 80vh; /* limita altura para evitar ultrapassar a tela */
     background: rgba(250, 248, 240, 0.95);
-    border-left: 3px solid #5a4636;
-    padding: 10px;
-    box-shadow: -4px 0px 8px rgba(0,0,0,0.3);
+    border-right: 3px solid #5a4636; /* trocar border-left por border-right */
+    padding: 15px;
+    box-shadow: 4px 0 8px rgba(0,0,0,0.3); /* sombra para o lado direito */
     z-index: 1100;
     display: flex;
     flex-direction: column;
+    overflow-y: auto; /* permite scroll interno se o conteúdo for maior */
+    border-radius: 4px 0 0 4px; /* bordas arredondadas na esquerda */
 }
 .hidden {
     display: none !important;
@@ -40,16 +45,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 10px;
 }
 .stats-header h2 {
     font-family: 'Press Start 2P', monospace;
     font-size: 14px;
+    margin: 0;
 }
 #close-panel {
     background: #d96d6d;
     border: none;
     padding: 4px 8px;
     cursor: pointer;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: background 0.3s ease;
 }
 #close-panel:hover {
     background: #f08080;
@@ -59,7 +69,6 @@
 .stats-content {
     font-family: 'Press Start 2P', monospace;
     font-size: 10px;
-    overflow-y: auto;
     flex-grow: 1;
 }
 .stats-content p {
@@ -70,7 +79,10 @@
 #props-list {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 10px 0 0 0;
+    max-height: 200px; /* limita o tamanho da lista para scroll */
+    overflow-y: auto;
+    border-top: 1px solid #ccc;
 }
 #props-list li {
     border-bottom: 1px solid #ccc;
@@ -78,7 +90,21 @@
 }
 
 /* Botões internos */
+.list-controls {
+    margin-top: 10px;
+    text-align: center;
+}
 .list-controls button {
-    margin: 4px 2px;
+    margin: 4px 6px;
     font-size: 9px;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid #5a4636;
+    background: #f5d6ba;
+    font-family: 'Press Start 2P', monospace;
+    transition: background 0.3s ease;
+}
+.list-controls button:hover {
+    background: #ffe3c6;
 }

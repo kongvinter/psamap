@@ -1,45 +1,27 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    
-    <link rel="stylesheet" href="css/leaflet.css" />
-    <link rel="stylesheet" href="css/L.Control.Layers.Tree.css" />
-    <link rel="stylesheet" href="css/qgis2web.css" />
-    <link rel="stylesheet" href="css/fontawesome-all.min.css" />
-    <link rel="stylesheet" href="css/leaflet.photon.css" />
-    <link rel="stylesheet" href="css/leaflet-measure.css" />
-    <link rel="stylesheet" href="css/style.css" />
-    
-    <style>
-        html, body, #map {
-            width: 100%;
-            height: 100%;
-            padding: 0;
-            margin: 0;
-        }
-        /* Você pode incluir aqui também o CSS do painel de estatísticas */
-    </style>
-
-    <title>Áreas de Propriedades Aderidas ao Programa PSA</title>
-</head>
 <body>
-    <div id="map">
-        <img class="map-logo" src="images/LOGOPSA.png" alt="Logo PSA" />
+    <div id="map" style="position: relative;">
+        <!-- Logo posicionada sobre o mapa -->
+        <img class="map-logo" src="images/LOGOPSA.png" alt="Logo PSA" 
+             style="position: absolute; top: 10px; left: 10px; z-index: 1000; width: 120px; pointer-events: none;" />
     </div>
 
-    <!-- Botão para abrir o painel -->
-    <button id="stats-btn">Estatísticas</button>
-<!-- Painel lateral -->
-<div id="stats-panel" class="hidden">
-    <div class="stats-header">
-        <h2>Estatísticas</h2>
-        <button id="close-panel">❌</button>
+    <!-- Botão para abrir o painel de estatísticas -->
+    <button id="stats-btn" 
+            style="position: absolute; top: 10px; right: 10px; z-index: 1100; padding: 8px 12px; cursor: pointer;">
+        Estatísticas
+    </button>
+
+    <!-- Painel de estatísticas inicialmente oculto -->
+    <div id="stats-panel" class="hidden" 
+     style="position: absolute; top: 50px; right: 10px; z-index: 1200; 
+            background: white; padding: 15px; max-width: 320px; max-height: 80vh; overflow-y: auto; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25); border-radius: 4px; display: none;">
+
+    <div class="stats-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2 style="margin: 0;">Estatísticas</h2>
+        <button id="close-panel" style="cursor: pointer; padding: 4px 8px;">Fechar</button>
     </div>
+
     <div class="stats-content">
         <p><strong>Propriedades aderidas:</strong> <span id="total-props">0</span></p>
         <p><strong>Área total:</strong> <span id="total-area">0</span> ha</p>
@@ -47,33 +29,32 @@
 
         <canvas id="areaChart"></canvas>
 
-        <div class="list-controls">
-            <button id="sort-green">Ordenar por Área Verde</button>
+        <div class="list-controls" style="margin-top: 10px;">
+            <button id="sort-green" style="margin-right: 5px;">Ordenar por Área Verde</button>
             <button id="sort-total">Ordenar por Área Total</button>
         </div>
 
-        <ul id="props-list"></ul>
+        <ul id="props-list" style="margin-top: 10px; padding-left: 20px;"></ul>
     </div>
 </div>
 
-<!-- Vincular arquivos -->
-<link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Vincular arquivos CSS e JS conforme você já tem -->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-
-        <!-- bibliotecas base -->
-<script src="js/qgis2web_expressions.js"></script>
-<script src="js/leaflet.js"></script>
-<script src="js/L.Control.Layers.Tree.min.js"></script>
-<script src="js/leaflet.rotatedMarker.js"></script>
-<script src="js/leaflet.pattern.js"></script>
-<script src="js/leaflet-hash.js"></script>
-<script src="js/Autolinker.min.js"></script>
-<script src="js/rbush.min.js"></script>
-<script src="js/labelgun.min.js"></script>
-<script src="js/labels.js"></script>
-<script src="js/leaflet.photon.js"></script>
-<script src="js/leaflet-measure.js"></script>
+    <!-- bibliotecas base -->
+    <script src="js/qgis2web_expressions.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/L.Control.Layers.Tree.min.js"></script>
+    <script src="js/leaflet.rotatedMarker.js"></script>
+    <script src="js/leaflet.pattern.js"></script>
+    <script src="js/leaflet-hash.js"></script>
+    <script src="js/Autolinker.min.js"></script>
+    <script src="js/rbush.min.js"></script>
+    <script src="js/labelgun.min.js"></script>
+    <script src="js/labels.js"></script>
+    <script src="js/leaflet.photon.js"></script>
+    <script src="js/leaflet-measure.js"></script>
 
 <!-- camadas / dados gerados pelo qgis2web (cada data/*.js apenas uma vez) -->
 <script src="data/RioCubato_2.js"></script>
