@@ -1,9 +1,21 @@
-//* Botão principal */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#map {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+    z-index: 0; /* mapa em background */
+}
+
 #stats-btn {
     position: absolute;
     top: 10px;
-    left: 10px;        /* mover para a esquerda */
-    right: auto;       /* remover a referência ao right */
+    left: 10px;
+    z-index: 1000;
     background: #f5d6ba;
     border: 2px solid #5a4636;
     border-radius: 8px;
@@ -11,7 +23,6 @@
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
     cursor: pointer;
-    z-index: 1000;
     transition: background 0.3s ease;
 }
 
@@ -19,92 +30,25 @@
     background: #ffe3c6;
 }
 
-/* Painel */
 #stats-panel {
     position: absolute;
-    top: 50px; /* mantém espaçamento do topo */
-    left: 10px; /* trocar right por left */
+    top: 50px;
+    left: 10px;
     width: 320px;
-    max-height: 80vh; /* limita altura para evitar ultrapassar a tela */
+    max-height: 80vh;
     background: rgba(250, 248, 240, 0.95);
-    border-right: 3px solid #5a4636; /* trocar border-left por border-right */
+    border-right: 3px solid #5a4636;
     padding: 15px;
-    box-shadow: 4px 0 8px rgba(0,0,0,0.3); /* sombra para o lado direito */
+    box-shadow: 4px 0 8px rgba(0,0,0,0.3);
     z-index: 1100;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* permite scroll interno se o conteúdo for maior */
-    border-radius: 4px 0 0 4px; /* bordas arredondadas na esquerda */
-}
-.hidden {
-    display: none !important;
-}
-
-/* Cabeçalho do painel */
-.stats-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-.stats-header h2 {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    margin: 0;
-}
-#close-panel {
-    background: #d96d6d;
-    border: none;
-    padding: 4px 8px;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: background 0.3s ease;
-}
-#close-panel:hover {
-    background: #f08080;
-}
-
-/* Conteúdo */
-.stats-content {
+    overflow-y: auto;
+    border-radius: 4px 0 0 4px;
     font-family: 'Press Start 2P', monospace;
     font-size: 10px;
-    flex-grow: 1;
-}
-.stats-content p {
-    margin: 6px 0;
 }
 
-/* Lista */
-#props-list {
-    list-style: none;
-    padding: 0;
-    margin: 10px 0 0 0;
-    max-height: 200px; /* limita o tamanho da lista para scroll */
-    overflow-y: auto;
-    border-top: 1px solid #ccc;
-}
-#props-list li {
-    border-bottom: 1px solid #ccc;
-    padding: 4px 0;
-}
-
-/* Botões internos */
-.list-controls {
-    margin-top: 10px;
-    text-align: center;
-}
-.list-controls button {
-    margin: 4px 6px;
-    font-size: 9px;
-    padding: 4px 8px;
-    cursor: pointer;
-    border-radius: 4px;
-    border: 1px solid #5a4636;
-    background: #f5d6ba;
-    font-family: 'Press Start 2P', monospace;
-    transition: background 0.3s ease;
-}
-.list-controls button:hover {
-    background: #ffe3c6;
+.hidden {
+    display: none !important;
 }
