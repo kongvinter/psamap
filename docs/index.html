@@ -1,112 +1,153 @@
-<body>
-    <div id="map" style="position: relative; height: 100vh; width: 100%;">
-        <img class="map-logo" src="images/LOGOPSA.png" alt="Logo PSA" 
-             style="position: absolute; top: 10px; left: 10px; z-index: 1000; width: 120px; pointer-events: none;" />
-    </div>
+<!--
+Arquivo: index.html (versão final mesclada)
+Descrição: HTML gerado pelo qgis2web (fornecido por você) **integrado** com o painel de estatísticas no estilo JRPG e com o script js/stats.js. Salve este arquivo como index.html na raiz do seu site.
+Importante: mantenha as pastas css/, js/ e data/ conforme a sua estrutura atual no repositório.
+-->
 
-    <!-- Botão para abrir o painel de estatísticas -->
-    <button id="stats-btn" 
-            style="position: absolute; top: 10px; right: 10px; z-index: 1100; padding: 8px 12px; cursor: pointer;">
-        Estatísticas
-    </button>
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
 
-    <!-- Painel de estatísticas inicialmente oculto -->
-    <div id="stats-panel" class="hidden" 
-     style="position: absolute; top: 50px; right: 10px; z-index: 1200; 
-            background: white; padding: 15px; max-width: 320px; max-height: 80vh; overflow-y: auto; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25); border-radius: 4px; display: none;">
+        <!-- estilos qgis2web e dependências -->
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
 
-    <div class="stats-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h2 style="margin: 0;">Estatísticas</h2>
-        <button id="close-panel" style="cursor: pointer; padding: 4px 8px;">Fechar</button>
-    </div>
+        <!-- Estilo JRPG customizado (painel e botões) -->
+        <link rel="stylesheet" href="css/style.css">
 
-    <div class="stats-content">
-        <p><strong>Propriedades aderidas:</strong> <span id="total-props">0</span></p>
-        <p><strong>Área total:</strong> <span id="total-area">0</span> ha</p>
-        <p><strong>Área verde total:</strong> <span id="total-green">0</span> ha</p>
+        <!-- Fonte pixel (estética anos 2000 JRPG) -->
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
-        <canvas id="areaChart"></canvas>
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Áreas de Propriedades Aderidas ao Programa PSA</title>
+    </head>
+    <body>
 
-        <div class="list-controls" style="margin-top: 10px;">
-            <button id="sort-green" style="margin-right: 5px;">Ordenar por Área Verde</button>
-            <button id="sort-total">Ordenar por Área Total</button>
+        <!-- Mapa (conteúdo qgis2web) -->
+        <div id="map"></div>
+
+        <!-- Botão Estatísticas (posicionado à esquerda conforme seu CSS original) -->
+        <button id="stats-btn">Estatísticas</button>
+
+        <!-- Painel lateral JRPG (escuro, integrado) -->
+        <div id="stats-panel" class="hidden stats-panel side-panel" style="display:none;">
+          <div class="stats-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h2>Estatísticas</h2>
+            <button id="close-panel">Fechar</button>
+          </div>
+
+          <div class="stats-content">
+            <p><strong>Propriedades aderidas:</strong> <span id="total-props">0</span></p>
+            <p><strong>Área total:</strong> <span id="total-area">0</span> ha</p>
+            <p><strong>Área verde total:</strong> <span id="total-green">0</span> ha</p>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+              <div style="flex:1 1 240px;">
+                <h4>Contribuição por Área</h4>
+                <canvas id="chart-area" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+              </div>
+              <div style="flex:1 1 240px;">
+                <h4>Contribuição por Área Verde</h4>
+                <canvas id="chart-areaverd" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+              </div>
+            </div>
+
+            <div class="list-controls" style="margin-top:10px;">
+              <button id="sort-green" style="margin-right:6px;">Ordenar por Área Verde</button>
+              <button id="sort-total">Ordenar por Área Total</button>
+            </div>
+
+            <ul id="props-list" style="margin-top:10px; padding-left:18px;"></ul>
+
+            <!-- Elementos de compatibilidade (legado) -->
+            <div style="margin-top:10px; font-size:12px; opacity:0.9;">
+              <p id="layer-count">Camadas no grupo: —</p>
+              <p id="area-total">Total Área: —</p>
+              <p id="areaverd-total">Total Área Verd: —</p>
+            </div>
+
+          </div>
         </div>
 
-        <ul id="props-list" style="margin-top: 10px; padding-left: 20px;"></ul>
-    </div>
-</div>
 
-    <!-- Vincular arquivos CSS e JS conforme você já tem -->
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- SCRIPTS qgis2web -->
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet-measure.js"></script>
 
-    <!-- bibliotecas base -->
-    <script src="js/qgis2web_expressions.js"></script>
-    <script src="js/leaflet.js"></script>
-    <script src="js/L.Control.Layers.Tree.min.js"></script>
-    <script src="js/leaflet.rotatedMarker.js"></script>
-    <script src="js/leaflet.pattern.js"></script>
-    <script src="js/leaflet-hash.js"></script>
-    <script src="js/Autolinker.min.js"></script>
-    <script src="js/rbush.min.js"></script>
-    <script src="js/labelgun.min.js"></script>
-    <script src="js/labels.js"></script>
-    <script src="js/leaflet.photon.js"></script>
-    <script src="js/leaflet-measure.js"></script>
+        <!-- dados (data/*.js) gerados pelo qgis2web (mantive sua lista) -->
+        <script src="data/RioCubato_2.js"></script>
+        <script src="data/RiodaPrataCubatao_3.js"></script>
+        <script src="data/RioVermelhoCubato_4.js"></script>
+        <script src="data/RioAguasAltasCubato_5.js"></script>
+        <script src="data/ImoveisdeGaruva_6.js"></script>
+        <script src="data/ImoveisdeJoinville_7.js"></script>
+        <script src="data/116124_8.js"></script>
+        <script src="data/171295_9.js"></script>
+        <script src="data/151005_10.js"></script>
+        <script src="data/79197_11.js"></script>
+        <script src="data/104089_12.js"></script>
+        <script src="data/14780_13.js"></script>
+        <script src="data/81_14.js"></script>
+        <script src="data/103699_15.js"></script>
+        <script src="data/92556_16.js"></script>
+        <script src="data/7859_17.js"></script>
+        <script src="data/14779_18.js"></script>
+        <script src="data/79199_19.js"></script>
+        <script src="data/84345_20.js"></script>
+        <script src="data/84344_21.js"></script>
+        <script src="data/6169_22.js"></script>
+        <script src="data/143293_23.js"></script>
+        <script src="data/43918_24.js"></script>
+        <script src="data/71398_25.js"></script>
+        <script src="data/39859_26.js"></script>
+        <script src="data/151959_27.js"></script>
+        <script src="data/84347_28.js"></script>
+        <script src="data/6170_29.js"></script>
+        <script src="data/33782_30.js"></script>
+        <script src="data/143292_31.js"></script>
+        <script src="data/LimitedoPrograma_32.js"></script>
+        <script src="data/LimiteDivisaJoinvilleGaruva_33.js"></script>
+        <script src="data/Lotes_rurais_34.js"></script>
+        <script src="data/RioQuiriri_35.js"></script>
+        <script src="data/ArroioPedradeFlorQuiriri_36.js"></script>
+        <script src="data/RioGuilhermeQuiriri_37.js"></script>
+        <script src="data/RioBarozaQuiriri_38.js"></script>
+        <script src="data/RiodaFigueira_39.js"></script>
+        <script src="data/RioRodriguesQuiriri_40.js"></script>
+        <script src="data/RioAguasAltasQuiriri_41.js"></script>
+        <script src="data/RiodaSerraQuiriri_42.js"></script>
+        <script src="data/RiodaSerraria_43.js"></script>
+        <script src="data/RioBarretos_44.js"></script>
+        <script src="data/RioOrelhana_45.js"></script>
 
-<!-- camadas / dados gerados pelo qgis2web (cada data/*.js apenas uma vez) -->
-<script src="data/RioCubato_2.js"></script>
-<script src="data/RiodaPrataCubatao_3.js"></script>
-<script src="data/RioVermelhoCubato_4.js"></script>
-<script src="data/RioAguasAltasCubato_5.js"></script>
-<script src="data/ImoveisdeGaruva_6.js"></script>
-<script src="data/ImoveisdeJoinville_7.js"></script>
-<script src="data/116124_8.js"></script>
-<script src="data/171295_9.js"></script>
-<script src="data/151005_10.js"></script>
-<script src="data/79197_11.js"></script>
-<script src="data/104089_12.js"></script>
-<script src="data/14780_13.js"></script>
-<script src="data/81_14.js"></script>
-<script src="data/103699_15.js"></script>
-<script src="data/92556_16.js"></script>
-<script src="data/7859_17.js"></script>
-<script src="data/14779_18.js"></script>
-<script src="data/79199_19.js"></script>
-<script src="data/84345_20.js"></script>
-<script src="data/84344_21.js"></script>
-<script src="data/6169_22.js"></script>
-<script src="data/143293_23.js"></script>
-<script src="data/43918_24.js"></script>
-<script src="data/71398_25.js"></script>
-<script src="data/39859_26.js"></script>
-<script src="data/151959_27.js"></script>
-<script src="data/84347_28.js"></script>
-<script src="data/6170_29.js"></script>
-<script src="data/33782_30.js"></script>
-<script src="data/143292_31.js"></script>
-<script src="data/LimitedoPrograma_32.js"></script>
-<script src="data/LimiteDivisaJoinvilleGaruva_33.js"></script>
-<script src="data/Lotes_rurais_34.js"></script>
-<script src="data/RioQuiriri_35.js"></script>
-<script src="data/ArroioPedradeFlorQuiriri_36.js"></script>
-<script src="data/RioGuilhermeQuiriri_37.js"></script>
-<script src="data/RioBarozaQuiriri_38.js"></script>
-<script src="data/RiodaFigueira_39.js"></script>
-<script src="data/RioRodriguesQuiriri_40.js"></script>
-<script src="data/RioAguasAltasQuiriri_41.js"></script>
-<script src="data/RiodaSerraQuiriri_42.js"></script>
-<script src="data/RiodaSerraria_43.js"></script>
-<script src="data/RioBarretos_44.js"></script>
-<script src="data/RioOrelhana_45.js"></script>
-
-<!-- Chart.js (biblioteca) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- seu script customizado (após as libs e os dados) -->
-<script src="js/stats.js"></script>
-
+        <!-- Abaixo: código de criação do mapa (mantive o seu trecho original e a variável `map`) -->
+        <script>
         var highlightLayer;
         function highlightFeature(e) {
             highlightLayer = e.target;
@@ -142,6 +183,31 @@
          }
          return tempDiv.innerHTML;
         }
+        </script>
+
+        <!-- Chart.js (biblioteca) -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+        <!-- script de estatísticas (versão adaptada) -->
+        <script src="js/stats.js"></script>
+
+        <!-- controlador UI: abrir/fechar e ordenação -->
+        <script>
+        (function(){
+          const openBtn = document.getElementById('stats-btn');
+          const panel = document.getElementById('stats-panel');
+          const closeBtn = document.getElementById('close-panel');
+
+          function show(){ panel.style.display = 'block'; if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') window.webmapStats.updateStats(); }
+          function hide(){ panel.style.display = 'none'; }
+
+          openBtn.addEventListener('click', show);
+          closeBtn.addEventListener('click', hide);
+          document.addEventListener('keydown', function(e){ if (e.key === 'Escape') hide(); });
+
+          document.getElementById('sort-green').addEventListener('click', function(){ if (window.webmapStats && window.webmapStats.sortBy) window.webmapStats.sortBy('areaverd'); });
+          document.getElementById('sort-total').addEventListener('click', function(){ if (window.webmapStats && window.webmapStats.sortBy) window.webmapStats.sortBy('area'); });
+        })();
         // add class to format popup if it contains media
 		function addClassToPopupIfMedia(content, popup) {
 			var tempDiv = document.createElement('div');

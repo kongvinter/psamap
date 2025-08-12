@@ -1,182 +1,152 @@
-// js/stats.js - versão resistente a problemas de timing
+// Estatísticas (js/stats.js) — versão adaptada para coexistir com o HTML do usuário
+// O script procura por um LayerGroup chamado "Propriedades Aderidas" (heurísticas) e atualiza
+// tanto os elementos de interface originais do usuário (total-props, total-area, total-green, props-list)
+// quanto os elementos compatíveis com a versão anterior (layer-count, area-total, areaverd-total, chart-area, chart-areaverd).
+
 (function(){
-    // utilitário para logar com um prefixo
-    const log = (...args) => console.log("[STATS]", ...args);
-    const warn = (...args) => console.warn("[STATS]", ...args);
-    const err = (...args) => console.error("[STATS]", ...args);
-  
-    // Funções de UI (assumem que elementos existem no DOM)
-    function bindUI() {
-      const openBtn = document.getElementById("stats-btn");
-      const closeBtn = document.getElementById("close-panel");
-      if (openBtn) openBtn.addEventListener("click", () => {
-        document.getElementById("stats-panel").classList.remove("hidden");
-      });
-      if (closeBtn) closeBtn.addEventListener("click", () => {
-        document.getElementById("stats-panel").classList.add("hidden");
-      });
+  function parseNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return v;
+    const s = String(v).replace(/\s+/g,'').replace(/\./g,'').replace(/,/g,'.');
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function findLayerGroup(map, expectedName){
+    if (window.PropriedadesAderidasLayerGroup) return window.PropriedadesAderidasLayerGroup;
+    let found = null;
+    if (!map || typeof map.eachLayer !== 'function') return null;
+    map.eachLayer(function(l){ if (l && l.groupName && l.groupName === expectedName) found = l; });
+    if (found) return found;
+    if (window.overlayMaps){ for (const k in window.overlayMaps){ if (k === expectedName) return window.overlayMaps[k]; }}
+
+    // heurística genérica
+    let candidate = null;
+    map.eachLayer(function(l){ if (l && typeof l.getLayers === 'function'){ const layers = l.getLayers(); if (layers && layers.length>0){ const first = layers[0]; if (first && first.feature && first.feature.properties) candidate = l; } } });
+    return candidate;
+  }
+
+  // Chart instances
+  let chartArea = null, chartAreaVerd = null;
+
+  // lista cacheada para ordenação
+  let lastContributions = [];
+
+  function updateStats(){
+    const map = window.map || window._map || null;
+    const group = findLayerGroup(map, 'Propriedades Aderidas');
+
+    const totalPropsEl = document.getElementById('total-props');
+    const totalAreaEl = document.getElementById('total-area');
+    const totalGreenEl = document.getElementById('total-green');
+    const propsListEl = document.getElementById('props-list');
+
+    const layerCountEl = document.getElementById('layer-count');
+    const areaTotalEl = document.getElementById('area-total');
+    const areaverdTotalEl = document.getElementById('areaverd-total');
+
+    if (!group){
+      if (layerCountEl) layerCountEl.textContent = 'Grupo "Propriedades Aderidas" não encontrado.';
+      if (totalPropsEl) totalPropsEl.textContent = '0';
+      if (areaTotalEl) areaTotalEl.textContent = '—';
+      if (areaverdTotalEl) areaverdTotalEl.textContent = '—';
+      return;
     }
-  
-    // Funções de lógica (chart, cálculos, lista)
-    function renderChart(totalArea, totalGreen) {
-      const canvas = document.getElementById('areaChart');
-      if (!canvas) { warn("Canvas #areaChart não encontrado."); return; }
-      const ctx = canvas.getContext('2d');
-      if (window.areaChartInstance) window.areaChartInstance.destroy();
-      window.areaChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Área Total', 'Área Verde'],
-          datasets: [{ label: 'Hectares', data: [totalArea, totalGreen], backgroundColor: ['#ffcc66','#66cc99'] }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-      });
-    }
-  
-    function calculateStats(data) {
-      const totalProps = data.length;
-      const totalArea = data.reduce((s,p)=> s + (Number(p["Área"])||0), 0);
-      const totalGreen = data.reduce((s,p)=> s + (Number(p["Área Verd"])||0), 0);
-  
-      const tp = document.getElementById("total-props");
-      const ta = document.getElementById("total-area");
-      const tg = document.getElementById("total-green");
-      if (tp) tp.textContent = totalProps;
-      if (ta) ta.textContent = totalArea.toFixed(2);
-      if (tg) tg.textContent = totalGreen.toFixed(2);
-  
-      renderChart(totalArea, totalGreen);
-    }
-  
-    function renderList(data, sortBy) {
-      const listEl = document.getElementById("props-list");
-      if (!listEl) { warn("Elemento #props-list não encontrado."); return; }
-      const sorted = [...data].sort((a,b)=>(Number(b[sortBy])||0)-(Number(a[sortBy])||0));
-      listEl.innerHTML = "";
-      sorted.forEach(p=>{
-        const nome = p.nome || p.name || p.NOME || "Propriedade";
-        const valor = Number(p[sortBy]) || 0;
-        const li = document.createElement("li");
-        li.textContent = `${nome} - ${valor.toFixed(2)} ha`;
-        listEl.appendChild(li);
-      });
-    }
-  
-    // Extrai propriedades das camadas conhecidas (tenta várias estratégias)
-    function collectPropertiesFromMap(map) {
-      const props = [];
-  
-      try {
-        // 1) percorrer layers diretamente
-        map.eachLayer(layer => {
-          if (layer.feature && layer.feature.properties) props.push(layer.feature.properties);
-          // se for um layer do tipo GeoJSON com eachLayer (grupo)
-          else if (typeof layer.eachLayer === "function") {
-            layer.eachLayer(l => {
-              if (l.feature && l.feature.properties) props.push(l.feature.properties);
-            });
-          }
-        });
-      } catch (e) {
-        warn("Erro ao iterar map.eachLayer:", e);
-      }
-  
-      // 2) tentar varáveis globais geradas pelo qgis2web (ex: layer_*)
-      if (props.length === 0) {
-        for (const k of Object.keys(window)) {
-          try {
-            const v = window[k];
-            if (!v) continue;
-            // se for layer com eachLayer
-            if (typeof v.eachLayer === "function") {
-              v.eachLayer(l => {
-                if (l.feature && l.feature.properties) props.push(l.feature.properties);
-              });
-            }
-            // se for objeto geojson (feature)
-            else if (v.feature && v.feature.properties) {
-              props.push(v.feature.properties);
-            }
-          } catch(e) { /* silencioso */ }
-        }
-      }
-  
-      // Remover duplicados (por exemplo, se a mesma propriedade apareceu duas vezes)
-      const unique = [];
-      const seen = new Set();
-      for (const p of props) {
-        // tenta identificar por algum id, se houver
-        const id = p.id || p.ID || p.Id || (p.name? p.name + JSON.stringify(p): JSON.stringify(p));
-        if (!seen.has(id)) { seen.add(id); unique.push(p); }
-      }
-  
-      return unique;
-    }
-  
-    // Função principal que inicializa tudo quando tiver um mapa pronto
-    function initWithMap(map) {
-      log("Usando map existente.");
-      bindUI();
-  
-      // coletar dados e popular UI
-      const propertiesData = collectPropertiesFromMap(map);
-      if (propertiesData.length === 0) warn("Nenhuma propriedade encontrada no mapa. Verifique nomes de campos e camadas.");
-      calculateStats(propertiesData);
-      renderList(propertiesData, 'Área Verd');
-  
-      // Vincular botões de ordenação, se existirem
-      const sortGreen = document.getElementById("sort-green");
-      const sortTotal = document.getElementById("sort-total");
-      if (sortGreen) sortGreen.addEventListener("click", ()=> renderList(propertiesData, 'Área Verd'));
-      if (sortTotal) sortTotal.addEventListener("click", ()=> renderList(propertiesData, 'Área'));
-    }
-  
-    // Fallback simples (sem map): apenas vincula UI para evitar erros e informa o usuário
-    function initFallback() {
-      warn("map não encontrado. Vinculando apenas UI (sem dados).");
-      bindUI();
-      // mostra aviso visual se quiser
-      const panel = document.getElementById("stats-panel");
-      if (panel) {
-        const p = document.createElement("p");
-        p.style.color = "crimson";
-        p.textContent = "Mapa não encontrado - estatísticas indisponíveis.";
-        panel.insertBefore(p, panel.firstChild);
-      }
-    }
-  
-    // Espera DOM pronto, depois procura map
-    document.addEventListener("DOMContentLoaded", ()=>{
-      let attempts = 0;
-      const maxAttempts = 12; // ~ 6s
-      const interval = 500; // ms
-  
-      const tryAttach = () => {
-        attempts++;
-        if (typeof window.map !== "undefined") {
-          // se o map existir, espera whenReady
-          try {
-            window.map.whenReady(()=> initWithMap(window.map));
-            log("map encontrado; aguardando whenReady...");
-          } catch(e) {
-            // se whenReady não existir, inicia direto
-            log("map encontrado mas whenReady falhou — inicializando direto.");
-            initWithMap(window.map);
-          }
-          clearInterval(timer);
-          return;
-        }
-        if (attempts >= maxAttempts) {
-          clearInterval(timer);
-          initFallback();
-          return;
-        }
-        // senão, aguarda mais
-      };
-  
-      const timer = setInterval(tryAttach, interval);
-      // primeira tentativa imediata
-      tryAttach();
+
+    let layers = [];
+    if (typeof group.getLayers === 'function') layers = group.getLayers();
+    else if (group._layers) layers = Object.values(group._layers);
+
+    if (layerCountEl) layerCountEl.textContent = 'Camadas no grupo: ' + layers.length;
+    if (totalPropsEl) totalPropsEl.textContent = String(layers.length);
+
+    let totalArea = 0, totalAreaVerd = 0;
+    const contributions = [];
+
+    layers.forEach(function(layer){
+      const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : (layer.options && layer.options.properties ? layer.options.properties : {});
+      const name = props.nome || props.Nome || props.name || props.id || ('feature-' + (Math.random()*10000|0));
+      const a = parseNumber(props['Área'] || props['Area'] || props.area || props['AREA']);
+      const av = parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || props['areaverd'] || props['Área_Verd']);
+      totalArea += a; totalAreaVerd += av;
+      contributions.push({ name: String(name), area: a, areaverd: av });
     });
-  })();
-  
+
+    // atualiza textos (convertendo para hectares se necessário)
+    // Supondo que os valores já estão em hectares; se estiverem em m², converta: value/10000
+    if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
+    if (areaverdTotalEl) areaverdTotalEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
+    if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
+    if (totalAreaEl && totalAreaEl.id === 'total-area') totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
+    if (totalAreaEl && document.getElementById('total-area')) document.getElementById('total-area').textContent = totalArea.toLocaleString('pt-BR');
+    if (document.getElementById('total-green')) document.getElementById('total-green').textContent = totalAreaVerd.toLocaleString('pt-BR');
+
+    // popular lista simples
+    if (propsListEl){
+      propsListEl.innerHTML = '';
+      contributions.forEach(function(c){
+        const li = document.createElement('li');
+        li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR');
+        propsListEl.appendChild(li);
+      });
+    }
+
+    // salvar para ordenação externa
+    lastContributions = contributions.slice();
+
+    // gerar gráficos (Chart.js)
+    function buildChart(canvasId, values, labels){
+      const el = document.getElementById(canvasId);
+      if (!el) return null;
+      const ctx = el.getContext('2d');
+      try{ if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea=null;} }
+      catch(e){}
+      try{ if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd=null;} }
+      catch(e){}
+
+      const cfg = {
+        type: 'pie',
+        data: { labels: labels, datasets: [{ data: values, borderWidth: 1 }] },
+        options: { plugins:{ legend:{ position:'bottom' }, tooltip:{ callbacks:{ label: function(ctx){ return ctx.label + ': ' + ctx.parsed.toLocaleString('pt-BR'); } } } } }
+      };
+
+      const c = new Chart(ctx, cfg);
+      if (canvasId === 'chart-area') chartArea = c;
+      if (canvasId === 'chart-areaverd') chartAreaVerd = c;
+      return c;
+    }
+
+    const labels = contributions.map(c=>c.name);
+    const valuesArea = contributions.map(c=>c.area);
+    const valuesAreaVerd = contributions.map(c=>c.areaverd);
+
+    // Se todos zeros, gera fatias iguais para visualização
+    const allZeroA = valuesArea.every(v=>v===0);
+    const allZeroV = valuesAreaVerd.every(v=>v===0);
+
+    buildChart('chart-area', allZeroA ? labels.map(()=>1) : valuesArea, labels);
+    buildChart('chart-areaverd', allZeroV ? labels.map(()=>1) : valuesAreaVerd, labels);
+
+  }
+
+  // função de ordenação exposta
+  function sortBy(mode){
+    if (!lastContributions || lastContributions.length===0) return;
+    const arr = lastContributions.slice();
+    if (mode === 'areaverd') arr.sort((a,b)=>b.areaverd - a.areaverd);
+    else arr.sort((a,b)=>b.area - a.area);
+    const propsListEl = document.getElementById('props-list');
+    if (!propsListEl) return;
+    propsListEl.innerHTML = '';
+    arr.forEach(function(c){ const li = document.createElement('li'); li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR'); propsListEl.appendChild(li); });
+  }
+
+  // expose
+  window.webmapStats = { updateStats: updateStats, sortBy: sortBy };
+
+  // auto-update após DOM carregado (mas antes de abrir o painel) — se o mapa e camadas já existirem
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){ if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') window.webmapStats.updateStats(); }, 800);
+  });
+
+})();

@@ -1,54 +1,84 @@
-html, body {
+:root{
+    --bg-1: #0b0221; /* deep indigo */
+    --glow-1: #ff6bd8; /* pink neon */
+    --glow-2: #7ae7ff; /* cyan neon */
+    --accent: #ffd166; /* warm yellow */
+    --panel-bg: rgba(10,8,20,0.92);
+  }
+  
+  /* Regras globais (combinação: seu original + tema JRPG) */
+  html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-}
-
-#map {
+    font-family: 'Press Start 2P', monospace;
+    background: radial-gradient(circle at 20% 10%, rgba(122,231,255,0.06), transparent 10%), linear-gradient(180deg, var(--bg-1), #050010 60%);
+  }
+  
+  /* Mapa: altura total como no seu CSS original (100vh) */
+  #map {
     height: 100vh;
     width: 100%;
     position: relative;
     z-index: 0; /* mapa em background */
-}
-
-#stats-btn {
-    position: absolute;
+  }
+  
+  /* Botão Estatísticas: usamos sua posição e aparência original, mas mantemos a fonte pixel JRPG */
+  #stats-btn {
+    position: absolute; /* mantive absolute para coexistir com layout qgis2web */
     top: 10px;
-    left: 10px;
+    left: 10px; /* sua preferência: botão à esquerda */
     z-index: 1000;
-    background: #f5d6ba;
+    background: #f5d6ba; /* cor bege do seu css original */
     border: 2px solid #5a4636;
     border-radius: 8px;
     padding: 8px 12px;
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
     cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-#stats-btn:hover {
+    transition: background 0.3s ease, transform 0.12s ease;
+  }
+  #stats-btn:hover {
     background: #ffe3c6;
-}
-
-#stats-panel {
-    position: absolute;
-    top: 50px;
-    left: 10px;
-    width: 320px;
-    max-height: 80vh;
-    background: rgba(250, 248, 240, 0.95);
-    border-right: 3px solid #5a4636;
-    padding: 15px;
-    box-shadow: 4px 0 8px rgba(0,0,0,0.3);
-    z-index: 1100;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    border-radius: 4px 0 0 4px;
+    transform: translateY(-2px);
+  }
+  
+  /* Painel lateral — agora com visual JRPG escuro */
+  #stats-panel{
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-}
-
-.hidden {
-    display: none !important;
-}
+    background: linear-gradient(180deg, rgba(6,2,20,0.96), rgba(20,8,40,0.96));
+    border: 3px solid rgba(122,231,255,0.10);
+    color: #e6f7ff;
+    padding: 18px;
+    max-width: 520px;
+    width: 360px;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 0 30px rgba(122,231,255,0.04);
+    backdrop-filter: blur(4px);
+  }
+  #stats-panel h2, #stats-panel h4 { color: var(--glow-1); font-size:12px; margin:0 0 8px 0; }
+  #stats-panel p, #stats-panel li { color: #dff6ff; font-size:10px; line-height:1.4; }
+  #stats-panel .list-controls button, #stats-panel button { background: transparent; border:1px solid rgba(255,255,255,0.06); color: var(--accent); padding:6px 8px; border-radius:6px; cursor:pointer; }
+  #stats-panel .list-controls button:hover, #stats-panel button:hover { transform: translateY(-2px); }
+  #stats-panel canvas { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:6px; }
+  .side-panel { width: 360px; }
+  
+  /* classe utilitária para ocultar elementos */
+  .hidden { display: none !important; }
+  
+  /* Toque retro nos canvases */
+  canvas{ image-rendering: pixelated; }
+  
+  /* Responsividade */
+  @media (max-width:900px){
+    .charts{ flex-direction:column; }
+    #stats-btn{ left:12px; top:6vh; padding:10px 12px; }
+    /* garantir que o painel lateral não cubra totalmente em telas pequenas */
+    #stats-panel{ left:8px; width: calc(100% - 16px); top: 60px; max-height: 60vh; border-radius:6px; }
+  }
+  
+  /* pequenos toques visuais estilo UI JRPG anos 2000 */
+  .stats-panel::before{
+    content: '';
+    position:absolute; left:10px; right:10px; top:10px; height:3px; background: linear-gradient(90deg, var(--glow-1), var(--glow-2)); opacity:0.08; border-radius:2px;
+  }
