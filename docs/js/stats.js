@@ -1,4 +1,4 @@
-// js/stats.js — versão atualizada com painel funcional
+// js/stats.js — versão atualizada para capturar camadas numeradas específicas
 (function(){
 
   // ===== Funções auxiliares =====
@@ -10,24 +10,36 @@
     return isNaN(n) ? 0 : n;
   }
 
-  function findLayerGroup(map, expectedName){
-    if (window.PropriedadesAderidasLayerGroup) return window.PropriedadesAderidasLayerGroup;
-    let found = null;
-    if (!map || typeof map.eachLayer !== 'function') return null;
-    map.eachLayer(function(l){ if (l && l.groupName && l.groupName === expectedName) found = l; });
-    if (found) return found;
-    if (window.overlayMaps){ for (const k in window.overlayMaps){ if (k === expectedName) return window.overlayMaps[k]; }}
-    let candidate = null;
-    map.eachLayer(function(l){ 
-      if (l && typeof l.getLayers === 'function'){ 
-        const layers = l.getLayers(); 
-        if (layers && layers.length>0){ 
-          const first = layers[0]; 
-          if (first && first.feature && first.feature.properties) candidate = l; 
-        } 
-      } 
+  // Lista das camadas numeradas que queremos capturar
+  const targetLayerIds = [
+    '143292', '33782', '6170', '84347', '151959', '39859', '71398', '43918',
+    '143293', '6169', '84344', '84345', '79199', '14779', '7859', '92556',
+    '103699', '81', '14780', '104089', '79197', '151005', '171295', '116124'
+  ];
+
+  // Função para encontrar as camadas numeradas específicas
+  function findTargetLayers(map){
+    if (!map || typeof map.eachLayer !== 'function') return [];
+    
+    const foundLayers = [];
+    
+    map.eachLayer(function(layer){
+      if (layer && layer.layerName) {
+        // Extrai o número da camada do nome (ex: layer_116124_8 -> 116124)
+        const layerMatch = layer.layerName.match(/layer_(\d+)_/);
+        if (layerMatch) {
+          const layerId = layerMatch[1];
+          if (targetLayerIds.includes(layerId)) {
+            foundLayers.push({
+              layer: layer,
+              id: layerId
+            });
+          }
+        }
+      }
     });
-    return candidate;
+    
+    return foundLayers;
   }
 
   let chartArea = null, chartAreaVerd = null;
@@ -36,7 +48,7 @@
   // ===== Atualiza estatísticas =====
   function updateStats(){
     const map = window.map || window._map || null;
-    const group = findLayerGroup(map, 'Propriedades Aderidas');
+    const targetLayers = findTargetLayers(map);
 
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
@@ -47,32 +59,50 @@
     const areaTotalEl = document.getElementById('area-total');
     const areaverdTotalEl = document.getElementById('areaverd-total');
 
-    if (!group){
-      if (layerCountEl) layerCountEl.textContent = 'Grupo "Propriedades Aderidas" não encontrado.';
+    if (targetLayers.length === 0){
+      if (layerCountEl) layerCountEl.textContent = 'Nenhuma camada numerada encontrada.';
       if (totalPropsEl) totalPropsEl.textContent = '0';
       if (areaTotalEl) areaTotalEl.textContent = '—';
       if (areaverdTotalEl) areaverdTotalEl.textContent = '—';
       return;
     }
 
-    let layers = [];
-    if (typeof group.getLayers === 'function') layers = group.getLayers();
-    else if (group._layers) layers = Object.values(group._layers);
-
-    if (layerCountEl) layerCountEl.textContent = 'Camadas no grupo: ' + layers.length;
-    if (totalPropsEl) totalPropsEl.textContent = String(layers.length);
+    if (layerCountEl) layerCountEl.textContent = 'Camadas encontradas: ' + targetLayers.length;
+    if (totalPropsEl) totalPropsEl.textContent = String(targetLayers.length);
 
     let totalArea = 0, totalAreaVerd = 0;
     const contributions = [];
 
-    layers.forEach(function(layer){
-      const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : (layer.options && layer.options.properties ? layer.options.properties : {});
-      const name = props.nome || props.Nome || props.name || props.id || ('feature-' + (Math.random()*10000|0));
-      const a = parseNumber(props['Área'] || props['Area'] || props.area || props['AREA']);
-      const av = parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || props['areaverd'] || props['Área_Verd']);
-      totalArea += a; 
-      totalAreaVerd += av;
-      contributions.push({ name: String(name), area: a, areaverd: av });
+    targetLayers.forEach(function(layerInfo){
+      const layer = layerInfo.layer;
+      const id = layerInfo.id;
+      
+      // Busca as propriedades nas features da camada
+      let props = {};
+      
+      if (layer.feature && layer.feature.properties) {
+        props = layer.feature.properties;
+      } else if (layer.options && layer.options.properties) {
+        props = layer.options.properties;
+      } else if (layer._layers) {
+        // Se a camada tem subcamadas, pega a primeira feature encontrada
+        const layers = Object.values(layer._layers);
+        if (layers.length > 0 && layers[0].feature && layers[0].feature.properties) {
+          props = layers[0].feature.properties;
+        }
+      }
+
+      const name = props.id || id; // Usa o ID da propriedade ou o ID da camada
+      const area = parseNumber(props['Área'] || props['Area'] || props.area || props['AREA'] || 0);
+      const areaVerd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || props['areaverd'] || props['Área_Verd'] || 0);
+      
+      totalArea += area; 
+      totalAreaVerd += areaVerd;
+      contributions.push({ 
+        name: String(name), 
+        area: area, 
+        areaverd: areaVerd 
+      });
     });
 
     if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
@@ -100,8 +130,32 @@
 
       const cfg = {
         type: 'pie',
-        data: { labels: labels, datasets: [{ data: values, borderWidth: 1 }] },
-        options: { plugins:{ legend:{ position:'bottom' }, tooltip:{ callbacks:{ label: function(ctx){ return ctx.label + ': ' + ctx.parsed.toLocaleString('pt-BR'); } } } } }
+        data: { 
+          labels: labels, 
+          datasets: [{ 
+            data: values, 
+            borderWidth: 1,
+            backgroundColor: [
+              '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+              '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+              '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
+              '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
+              '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
+            ]
+          }] 
+        },
+        options: { 
+          plugins: { 
+            legend: { position: 'bottom' }, 
+            tooltip: { 
+              callbacks: { 
+                label: function(ctx) { 
+                  return ctx.label + ': ' + ctx.parsed.toLocaleString('pt-BR'); 
+                } 
+              } 
+            } 
+          } 
+        }
       };
 
       const c = new Chart(ctx, cfg);
@@ -110,22 +164,32 @@
       return c;
     }
 
-    const labels = contributions.map(c=>c.name);
-    const valuesArea = contributions.map(c=>c.area);
-    const valuesAreaVerd = contributions.map(c=>c.areaverd);
+    const labels = contributions.map(c => c.name);
+    const valuesArea = contributions.map(c => c.area);
+    const valuesAreaVerd = contributions.map(c => c.areaverd);
 
-    const allZeroA = valuesArea.every(v=>v===0);
-    const allZeroV = valuesAreaVerd.every(v=>v===0);
+    const allZeroA = valuesArea.every(v => v === 0);
+    const allZeroV = valuesAreaVerd.every(v => v === 0);
 
-    buildChart('chart-area', allZeroA ? labels.map(()=>1) : valuesArea, labels);
-    buildChart('chart-areaverd', allZeroV ? labels.map(()=>1) : valuesAreaVerd, labels);
+    buildChart('chart-area', allZeroA ? labels.map(() => 1) : valuesArea, labels);
+    buildChart('chart-areaverd', allZeroV ? labels.map(() => 1) : valuesAreaVerd, labels);
+
+    console.log('Stats updated:', {
+      totalLayers: targetLayers.length,
+      totalArea: totalArea,
+      totalAreaVerd: totalAreaVerd,
+      contributions: contributions
+    });
   }
 
   function sortBy(mode){
-    if (!lastContributions || lastContributions.length===0) return;
+    if (!lastContributions || lastContributions.length === 0) return;
     const arr = lastContributions.slice();
-    if (mode === 'areaverd') arr.sort((a,b)=>b.areaverd - a.areaverd);
-    else arr.sort((a,b)=>b.area - a.area);
+    if (mode === 'areaverd') {
+      arr.sort((a,b) => b.areaverd - a.areaverd);
+    } else {
+      arr.sort((a,b) => b.area - a.area);
+    }
     const propsListEl = document.getElementById('props-list');
     if (!propsListEl) return;
     propsListEl.innerHTML = '';
@@ -189,7 +253,6 @@
       if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
         window.webmapStats.updateStats();
       }
-    }, 800);
+    }, 1000); // Aumentei o timeout para dar tempo das camadas carregarem
   });
-
 })();
