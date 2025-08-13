@@ -1,4 +1,4 @@
-// js/stats.js — versão adaptada para JSON unificado
+// js/stats.js — versão completa com gráficos, sem carregar JSON
 (function(){
 
   // ===== Funções auxiliares =====
@@ -10,91 +10,123 @@
     return isNaN(n) ? 0 : n;
   }
 
+  const targetLayerIds = [
+    '143292', '33782', '6170', '84347', '151959', '39859', '71398', '43918',
+    '143293', '6169', '84344', '84345', '79199', '14779', '7859', '92556',
+    '103699', '81', '14780', '104089', '79197', '151005', '171295', '116124'
+  ];
+
+  // ===== Encontrar grupo "Propriedades Aderidas" =====
+  function findPropriedadesAderidasGroup(map){
+    if (!map || typeof map.eachLayer !== 'function') return null;
+    
+    if (window.PropriedadesAderidasLayerGroup) return window.PropriedadesAderidasLayerGroup;
+
+    let groupFound = null;
+    map.eachLayer(layer => {
+      if (layer && layer.groupName === 'Propriedades Aderidas') groupFound = layer;
+    });
+
+    if (!groupFound && window.overlayMaps && window.overlayMaps['Propriedades Aderidas'])
+      groupFound = window.overlayMaps['Propriedades Aderidas'];
+
+    return groupFound;
+  }
+
+  // ===== Encontrar camadas alvo =====
+  function findTargetLayers(map){
+    const group = findPropriedadesAderidasGroup(map);
+    if (!group) return [];
+
+    const groupLayers = typeof group.getLayers === 'function' ? group.getLayers() : Object.values(group._layers || {});
+    const foundLayers = [];
+
+    groupLayers.forEach(layer => {
+      let layerId = null;
+
+      if (layer.layerName) {
+        const m = layer.layerName.match(/layer_(\d+)_/);
+        if (m) layerId = m[1];
+      }
+
+      if (!layerId && layer.options && layer.options.dataVar) {
+        const m = layer.options.dataVar.match(/json_(\d+)/);
+        if (m) layerId = m[1];
+      }
+
+      if (!layerId && layer.feature && layer.feature.properties && layer.feature.properties.id)
+        layerId = String(layer.feature.properties.id);
+
+      if (layerId && targetLayerIds.includes(layerId)) foundLayers.push({ layer, id: layerId });
+    });
+
+    return foundLayers;
+  }
+
   let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
 
-  // ===== Carrega todas as camadas a partir do JSON =====
-  function loadAllLayers(callback){
-    fetch('data/all_layers.json')
-      .then(response => {
-        if(!response.ok) throw new Error('Falha ao carregar o JSON');
-        return response.json();
-      })
-      .then(data => {
-        const layers = [];
-        for(const layerId in data){
-          const props = data[layerId];
+  // ===== Atualizar estatísticas e gráficos =====
+  function updateStats(){
+    const map = window.map || window._map || null;
+    const targetLayers = findTargetLayers(map);
 
-          // Cria camada Leaflet GeoJSON
-          const layer = L.geoJSON(props.coords ? props : props, {
-            onEachFeature: function(feature, l){
-              l.feature = feature; // compatibilidade com stats
-            },
-            properties: props
-          });
-
-          layer.layerName = `layer_${layerId}`;
-          layers.push({ layer, id: layerId });
-        }
-        callback(layers);
-      })
-      .catch(err => console.error('[stats] Erro ao carregar camadas JSON:', err));
-  }
-
-  // ===== Processa camadas para estatísticas =====
-  function processLayers(targetLayers){
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
     const totalGreenEl = document.getElementById('total-green');
     const propsListEl = document.getElementById('props-list');
-    const layerCountEl = document.getElementById('layer-count');
-    const areaTotalEl = document.getElementById('area-total');
-    const areaverdTotalEl = document.getElementById('areaverd-total');
 
     if (targetLayers.length === 0){
-      if (layerCountEl) layerCountEl.textContent = 'Nenhuma camada encontrada.';
       if (totalPropsEl) totalPropsEl.textContent = '0';
-      if (areaTotalEl) areaTotalEl.textContent = '—';
-      if (areaverdTotalEl) areaverdTotalEl.textContent = '—';
+      if (totalAreaEl) totalAreaEl.textContent = '—';
+      if (totalGreenEl) totalGreenEl.textContent = '—';
       return;
     }
-
-    if (layerCountEl) layerCountEl.textContent = 'Camadas encontradas: ' + targetLayers.length;
-    if (totalPropsEl) totalPropsEl.textContent = String(targetLayers.length);
 
     let totalArea = 0, totalAreaVerd = 0;
     const contributions = [];
 
-    targetLayers.forEach(function(layerInfo){
-      const layer = layerInfo.layer;
-      const id = layerInfo.id;
-      const props = layer.feature && layer.feature.properties ? layer.feature.properties : (layer.options ? layer.options.properties : {});
-      
+    targetLayers.forEach(({layer, id}) => {
+      let props = {};
+
+      if (layer.feature && layer.feature.properties) props = layer.feature.properties;
+      else if (layer.options && layer.options.properties) props = layer.options.properties;
+      else if (layer._layers) {
+        const layers = Object.values(layer._layers);
+        for (let sub of layers) {
+          if (sub.feature && sub.feature.properties) {
+            props = sub.feature.properties;
+            break;
+          }
+        }
+      }
+
       const name = props.nome || props.name || `Propriedade ${id}`;
       const area = parseNumber(props['Área'] || props['Area'] || props.area || 0);
       const areaVerd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['areaverd'] || 0);
 
       totalArea += area;
       totalAreaVerd += areaVerd;
+
       contributions.push({ name, area, areaverd: areaVerd });
     });
 
+    if (totalPropsEl) totalPropsEl.textContent = String(targetLayers.length);
     if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
-    if (areaverdTotalEl) areaverdTotalEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
     if (totalGreenEl) totalGreenEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
 
     if (propsListEl){
       propsListEl.innerHTML = '';
       contributions.forEach(c => {
         const li = document.createElement('li');
-        li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR');
+        li.textContent = `${c.name} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')}`;
         propsListEl.appendChild(li);
       });
     }
 
     lastContributions = contributions.slice();
 
-    // ===== Criação dos gráficos =====
+    // ===== Construir gráficos =====
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
       if (!el) return null;
@@ -143,34 +175,36 @@
     const valuesArea = contributions.map(c => c.area);
     const valuesAreaVerd = contributions.map(c => c.areaverd);
 
-    buildChart('chart-area', valuesArea.every(v => v===0) ? labels.map(() => 1) : valuesArea, labels);
-    buildChart('chart-areaverd', valuesAreaVerd.every(v => v===0) ? labels.map(() => 1) : valuesAreaVerd, labels);
+    const allZeroA = valuesArea.every(v => v === 0);
+    const allZeroV = valuesAreaVerd.every(v => v === 0);
+
+    buildChart('chart-area', allZeroA ? labels.map(() => 1) : valuesArea, labels);
+    buildChart('chart-areaverd', allZeroV ? labels.map(() => 1) : valuesAreaVerd, labels);
   }
 
-  // ===== Ordena a lista de propriedades =====
   function sortBy(mode){
     if (!lastContributions || lastContributions.length === 0) return;
     const arr = lastContributions.slice();
     if (mode === 'areaverd') arr.sort((a,b) => b.areaverd - a.areaverd);
     else arr.sort((a,b) => b.area - a.area);
+
     const propsListEl = document.getElementById('props-list');
     if (!propsListEl) return;
     propsListEl.innerHTML = '';
-    arr.forEach(function(c){ 
-      const li = document.createElement('li'); 
-      li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR'); 
-      propsListEl.appendChild(li); 
+    arr.forEach(c => {
+      const li = document.createElement('li');
+      li.textContent = `${c.name} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')}`;
+      propsListEl.appendChild(li);
     });
   }
 
-  window.webmapStats = { updateStats: function(){ loadAllLayers(processLayers); }, sortBy: sortBy };
+  window.webmapStats = { updateStats, sortBy };
 
-  // ===== Controle do painel =====
-  document.addEventListener('DOMContentLoaded', function(){
+  // ===== Painel =====
+  document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
-
     if (!btn || !panel) return;
 
     function openPanel() {
@@ -178,7 +212,7 @@
       panel.style.display = 'block';
       panel.style.visibility = 'visible';
       panel.style.zIndex = '1001';
-      if (window.webmapStats) setTimeout(() => window.webmapStats.updateStats(), 50);
+      setTimeout(() => window.webmapStats.updateStats(), 50);
     }
 
     function closePanel() {
@@ -186,19 +220,18 @@
       panel.style.display = 'none';
     }
 
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', () => {
       const computed = getComputedStyle(panel).display;
       if (computed === 'none') openPanel(); else closePanel();
     });
 
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
-
-    document.addEventListener('click', (event) => {
+    document.addEventListener('click', event => {
       if (!panel.contains(event.target) && !btn.contains(event.target)) closePanel();
     });
 
     panel.classList.add('hidden');
-    setTimeout(() => { if (window.webmapStats) window.webmapStats.updateStats(); }, 1000);
+    setTimeout(() => window.webmapStats.updateStats(), 500);
   });
 
 })();
