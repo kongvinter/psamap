@@ -33,7 +33,7 @@
   // ===== Carrega arquivos JS dinamicamente da pasta /data/ =====
   layerFiles.forEach(file => {
     const script = document.createElement('script');
-    script.src = '/data/' + file; // <--- pasta ajustada
+    script.src = 'data/' + file; // <--- pasta ajustada
     document.head.appendChild(script);
 
     script.onload = () => {
