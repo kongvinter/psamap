@@ -17,26 +17,72 @@
     '103699', '81', '14780', '104089', '79197', '151005', '171295', '116124'
   ];
 
-  // Função para encontrar as camadas numeradas específicas
+  // Função para encontrar o grupo "Propriedades Aderidas"
+  function findPropriedadesAderidasGroup(map) {
+    if (!map || typeof map.eachLayer !== 'function') return null;
+    
+    let groupFound = null;
+    
+    // Tenta encontrar no window primeiro (como estava no código original)
+    if (window.PropriedadesAderidasLayerGroup) {
+      return window.PropriedadesAderidasLayerGroup;
+    }
+    
+    // Procura nas camadas do mapa
+    map.eachLayer(function(layer) {
+      if (layer && layer.groupName === 'Propriedades Aderidas') {
+        groupFound = layer;
+      }
+    });
+    
+    if (groupFound) return groupFound;
+    
+    // Procura em overlayMaps se existir
+    if (window.overlayMaps && window.overlayMaps['Propriedades Aderidas']) {
+      return window.overlayMaps['Propriedades Aderidas'];
+    }
+    
+    return null;
+  }
+
+  // Função para encontrar as camadas numeradas dentro do grupo
   function findTargetLayers(map){
-    if (!map || typeof map.eachLayer !== 'function') return [];
+    if (!map) return [];
+    
+    const group = findPropriedadesAderidasGroup(map);
+    
+    if (!group) {
+      console.log('=== Grupo "Propriedades Aderidas" não encontrado ===');
+      return [];
+    }
+    
+    console.log('=== Grupo "Propriedades Aderidas" encontrado ===', group);
     
     const foundLayers = [];
-    const debugInfo = [];
+    let groupLayers = [];
     
-    map.eachLayer(function(layer){
-      // Debug: captura informações de todas as camadas
+    // Extrai as camadas do grupo
+    if (typeof group.getLayers === 'function') {
+      groupLayers = group.getLayers();
+    } else if (group._layers) {
+      groupLayers = Object.values(group._layers);
+    }
+    
+    console.log(`=== ${groupLayers.length} camadas no grupo ===`);
+    
+    groupLayers.forEach(function(layer, index) {
       const layerInfo = {
+        index: index,
         layerName: layer.layerName || 'undefined',
         dataVar: layer.options ? layer.options.dataVar : 'undefined',
         constructor: layer.constructor.name,
         hasFeature: !!(layer.feature),
-        hasLayers: !!(layer._layers),
-        keys: Object.keys(layer)
+        hasLayers: !!(layer._layers)
       };
-      debugInfo.push(layerInfo);
       
-      // Tenta diferentes padrões de identificação
+      console.log(`Camada do grupo ${index}:`, layerInfo);
+      
+      // Tenta identificar o ID da camada
       let layerId = null;
       
       // Padrão 1: layerName como layer_NUMERO_NUMERO
@@ -51,30 +97,23 @@
         if (match2) layerId = match2[1];
       }
       
-      // Padrão 3: ID direto nas propriedades da feature
-      if (!layerId && layer.feature && layer.feature.properties) {
-        const props = layer.feature.properties;
-        if (props.id && targetLayerIds.includes(String(props.id))) {
-          layerId = String(props.id);
-        }
+      // Padrão 3: ID nas propriedades da feature
+      if (!layerId && layer.feature && layer.feature.properties && layer.feature.properties.id) {
+        layerId = String(layer.feature.properties.id);
       }
+      
+      console.log(`Camada ${index} - ID identificado: ${layerId}`);
       
       if (layerId && targetLayerIds.includes(layerId)) {
         foundLayers.push({
           layer: layer,
           id: layerId
         });
+        console.log(`✓ Camada ${layerId} adicionada à lista`);
       }
     });
     
-    // Debug: mostra todas as camadas encontradas no console
-    console.log('=== DEBUG: Todas as camadas do mapa ===');
-    debugInfo.forEach((info, index) => {
-      console.log(`Camada ${index}:`, info);
-    });
-    
-    console.log('=== Camadas alvo encontradas ===', foundLayers);
-    
+    console.log('=== Camadas alvo encontradas no grupo ===', foundLayers);
     return foundLayers;
   }
 
