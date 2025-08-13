@@ -42,20 +42,23 @@
     const map = window.map || window._map || null;
     if (!map) return;
 
-    let features = getTargetLayers(map);
+    const features = getTargetLayers(map);
 
-    // Extrai somente id, Área e Área Verd
-    let contributions = features.map(layer => {
+    // Extrai somente id, Área e Área Verd e garante unicidade
+    const contributions = [];
+    const seenIds = new Set();
+
+    features.forEach(layer => {
       const props = layer.feature.properties;
-      return {
-        id: props.id || props.name || 'N/A',
-        area: parseNumber(props['Área'] || props.area || 0),
-        areaverd: parseNumber(props['Área Verd'] || props.areaverd || 0)
-      };
+      const id = props.id || props.name || null;
+      if (!id || seenIds.has(id)) return; // ignora duplicados
+      const area = parseNumber(props['Área'] || props.area || 0);
+      const areaverd = parseNumber(props['Área Verd'] || props.areaverd || 0);
+      if (area > 0 || areaverd > 0) {
+        contributions.push({ id, area, areaverd });
+        seenIds.add(id);
+      }
     });
-
-    // Filtra camadas irrelevantes (área total = 0)
-    contributions = contributions.filter(c => c.area > 0 || c.areaverd > 0);
 
     lastContributions = contributions.slice();
 
