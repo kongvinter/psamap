@@ -1,8 +1,4 @@
-// Estatísticas (js/stats.js) — versão adaptada para coexistir com o HTML do usuário
-// O script procura por um LayerGroup chamado "Propriedades Aderidas" (heurísticas) e atualiza
-// tanto os elementos de interface originais do usuário (total-props, total-area, total-green, props-list)
-// quanto os elementos compatíveis com a versão anterior (layer-count, area-total, areaverd-total, chart-area, chart-areaverd).
-
+// js/stats.js — versão com controle do botão Estatísticas integrado
 (function(){
   function parseNumber(v){
     if (v === null || v === undefined) return 0;
@@ -20,16 +16,20 @@
     if (found) return found;
     if (window.overlayMaps){ for (const k in window.overlayMaps){ if (k === expectedName) return window.overlayMaps[k]; }}
 
-    // heurística genérica
     let candidate = null;
-    map.eachLayer(function(l){ if (l && typeof l.getLayers === 'function'){ const layers = l.getLayers(); if (layers && layers.length>0){ const first = layers[0]; if (first && first.feature && first.feature.properties) candidate = l; } } });
+    map.eachLayer(function(l){ 
+      if (l && typeof l.getLayers === 'function'){ 
+        const layers = l.getLayers(); 
+        if (layers && layers.length>0){ 
+          const first = layers[0]; 
+          if (first && first.feature && first.feature.properties) candidate = l; 
+        } 
+      } 
+    });
     return candidate;
   }
 
-  // Chart instances
   let chartArea = null, chartAreaVerd = null;
-
-  // lista cacheada para ordenação
   let lastContributions = [];
 
   function updateStats(){
@@ -68,20 +68,15 @@
       const name = props.nome || props.Nome || props.name || props.id || ('feature-' + (Math.random()*10000|0));
       const a = parseNumber(props['Área'] || props['Area'] || props.area || props['AREA']);
       const av = parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || props['areaverd'] || props['Área_Verd']);
-      totalArea += a; totalAreaVerd += av;
+      totalArea += a; 
+      totalAreaVerd += av;
       contributions.push({ name: String(name), area: a, areaverd: av });
     });
 
-    // atualiza textos (convertendo para hectares se necessário)
-    // Supondo que os valores já estão em hectares; se estiverem em m², converta: value/10000
     if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
     if (areaverdTotalEl) areaverdTotalEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
-    if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
-    if (totalAreaEl && totalAreaEl.id === 'total-area') totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
-    if (totalAreaEl && document.getElementById('total-area')) document.getElementById('total-area').textContent = totalArea.toLocaleString('pt-BR');
-    if (document.getElementById('total-green')) document.getElementById('total-green').textContent = totalAreaVerd.toLocaleString('pt-BR');
+    if (totalGreenEl) totalGreenEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
 
-    // popular lista simples
     if (propsListEl){
       propsListEl.innerHTML = '';
       contributions.forEach(function(c){
@@ -91,18 +86,15 @@
       });
     }
 
-    // salvar para ordenação externa
     lastContributions = contributions.slice();
 
-    // gerar gráficos (Chart.js)
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
       if (!el) return null;
       const ctx = el.getContext('2d');
-      try{ if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea=null;} }
-      catch(e){}
-      try{ if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd=null;} }
-      catch(e){}
+
+      if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea=null; }
+      if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd=null; }
 
       const cfg = {
         type: 'pie',
@@ -120,16 +112,13 @@
     const valuesArea = contributions.map(c=>c.area);
     const valuesAreaVerd = contributions.map(c=>c.areaverd);
 
-    // Se todos zeros, gera fatias iguais para visualização
     const allZeroA = valuesArea.every(v=>v===0);
     const allZeroV = valuesAreaVerd.every(v=>v===0);
 
     buildChart('chart-area', allZeroA ? labels.map(()=>1) : valuesArea, labels);
     buildChart('chart-areaverd', allZeroV ? labels.map(()=>1) : valuesAreaVerd, labels);
-
   }
 
-  // função de ordenação exposta
   function sortBy(mode){
     if (!lastContributions || lastContributions.length===0) return;
     const arr = lastContributions.slice();
@@ -138,15 +127,35 @@
     const propsListEl = document.getElementById('props-list');
     if (!propsListEl) return;
     propsListEl.innerHTML = '';
-    arr.forEach(function(c){ const li = document.createElement('li'); li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR'); propsListEl.appendChild(li); });
+    arr.forEach(function(c){ 
+      const li = document.createElement('li'); 
+      li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR'); 
+      propsListEl.appendChild(li); 
+    });
   }
 
-  // expose
   window.webmapStats = { updateStats: updateStats, sortBy: sortBy };
 
-  // auto-update após DOM carregado (mas antes de abrir o painel) — se o mapa e camadas já existirem
   document.addEventListener('DOMContentLoaded', function(){
-    setTimeout(function(){ if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') window.webmapStats.updateStats(); }, 800);
+    // botão de abrir/fechar painel
+    const btn = document.getElementById("stats-btn");
+    const panel = document.getElementById("stats-panel");
+
+    if (btn && panel){
+      btn.addEventListener("click", function () {
+        panel.classList.toggle("hidden");
+        if (!panel.classList.contains("hidden")) {
+          window.webmapStats.updateStats();
+        }
+      });
+    }
+
+    // primeira atualização automática (após o mapa carregar)
+    setTimeout(function(){ 
+      if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
+        window.webmapStats.updateStats();
+      }
+    }, 800);
   });
 
 })();
