@@ -1,5 +1,7 @@
-// js/stats.js — versão com controle do botão Estatísticas integrado
+// js/stats.js — versão atualizada com painel funcional
 (function(){
+
+  // ===== Funções auxiliares =====
   function parseNumber(v){
     if (v === null || v === undefined) return 0;
     if (typeof v === 'number') return v;
@@ -15,7 +17,6 @@
     map.eachLayer(function(l){ if (l && l.groupName && l.groupName === expectedName) found = l; });
     if (found) return found;
     if (window.overlayMaps){ for (const k in window.overlayMaps){ if (k === expectedName) return window.overlayMaps[k]; }}
-
     let candidate = null;
     map.eachLayer(function(l){ 
       if (l && typeof l.getLayers === 'function'){ 
@@ -32,6 +33,7 @@
   let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
 
+  // ===== Atualiza estatísticas =====
   function updateStats(){
     const map = window.map || window._map || null;
     const group = findLayerGroup(map, 'Propriedades Aderidas');
@@ -136,55 +138,58 @@
 
   window.webmapStats = { updateStats: updateStats, sortBy: sortBy };
 
-  // === substituição robusta do bloco DOMContentLoaded ===
+  // ===== Controle do painel (abertura/fechamento) =====
   document.addEventListener('DOMContentLoaded', function(){
-    // botão de abrir/fechar painel (robusto)
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
-
-    function openPanel() {
-      if (!panel) return;
-      panel.classList.remove('hidden');
-      // remove qualquer display inline que force ocultação
-      panel.style.removeProperty('display');
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.style.zIndex = panel.style.zIndex || '99999';
-      // atualiza estatísticas logo após abrir (pequeno timeout para aliviar concorrência)
-      if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
-        setTimeout(() => window.webmapStats.updateStats(), 50);
-      }
-    }
-
-    function closePanel() {
-      if (!panel) return;
-      panel.classList.add('hidden');
-      panel.style.display = 'none';
-    }
 
     if (!btn || !panel) {
       console.warn('[stats] btn ou panel não encontrados no DOM.');
       return;
     }
 
+    // Funções de abrir e fechar painel
+    function openPanel() {
+      panel.classList.remove('hidden');
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.style.zIndex = '1001';
+      if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
+        setTimeout(() => window.webmapStats.updateStats(), 50);
+      }
+    }
+
+    function closePanel() {
+      panel.classList.add('hidden');
+      panel.style.display = 'none';
+    }
+
+    // Botão principal alterna abrir/fechar
     btn.addEventListener('click', function () {
       const computed = getComputedStyle(panel).display;
       if (computed === 'none') openPanel(); else closePanel();
-      console.log('Clique registrado — estado agora:', getComputedStyle(panel).display);
     });
 
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closePanel);
-    }
+    // Botão interno fecha painel
+    if (closeBtn) closeBtn.addEventListener('click', closePanel);
 
-    // primeira atualização automática (após o mapa carregar)
+    // Fecha ao clicar fora do painel
+    document.addEventListener('click', (event) => {
+      if (!panel.contains(event.target) && !btn.contains(event.target)) {
+        closePanel();
+      }
+    });
+
+    // Inicializa painel oculto
+    panel.classList.add('hidden');
+
+    // Atualização inicial de estatísticas
     setTimeout(function(){ 
       if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
         window.webmapStats.updateStats();
       }
     }, 800);
   });
-  // === fim da substituição ===
 
 })();

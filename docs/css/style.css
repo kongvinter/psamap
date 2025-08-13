@@ -26,9 +26,9 @@
   /* Botão Estatísticas: usamos sua posição e aparência original, mas mantemos a fonte pixel JRPG */
   #stats-btn {
     position: absolute; /* mantive absolute para coexistir com layout qgis2web */
-    top: 130px;
+    top: 150px;
     left: 10px; /* sua preferência: botão à esquerda */
-    z-index: 5000;
+    z-index: 1000;
     background: #f5d6ba; /* cor bege do seu css original */
     border: 2px solid #5a4636;
     border-radius: 8px;
@@ -45,6 +45,10 @@
   
   /* Painel lateral — agora com visual JRPG escuro */
   #stats-panel{
+    position: absolute;
+    z-index: 1001;
+    top: 160px;   /* ajusta conforme o layout */
+    left: 10px;   /* mesmo do botão, pode mudar */
     font-family: 'Press Start 2P', monospace;
     background: linear-gradient(180deg, rgba(6,2,20,0.96), rgba(20,8,40,0.96));
     border: 3px solid rgba(122,231,255,0.10);
