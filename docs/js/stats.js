@@ -22,22 +22,58 @@
     if (!map || typeof map.eachLayer !== 'function') return [];
     
     const foundLayers = [];
+    const debugInfo = [];
     
     map.eachLayer(function(layer){
-      if (layer && layer.layerName) {
-        // Extrai o número da camada do nome (ex: layer_116124_8 -> 116124)
-        const layerMatch = layer.layerName.match(/layer_(\d+)_/);
-        if (layerMatch) {
-          const layerId = layerMatch[1];
-          if (targetLayerIds.includes(layerId)) {
-            foundLayers.push({
-              layer: layer,
-              id: layerId
-            });
-          }
+      // Debug: captura informações de todas as camadas
+      const layerInfo = {
+        layerName: layer.layerName || 'undefined',
+        dataVar: layer.options ? layer.options.dataVar : 'undefined',
+        constructor: layer.constructor.name,
+        hasFeature: !!(layer.feature),
+        hasLayers: !!(layer._layers),
+        keys: Object.keys(layer)
+      };
+      debugInfo.push(layerInfo);
+      
+      // Tenta diferentes padrões de identificação
+      let layerId = null;
+      
+      // Padrão 1: layerName como layer_NUMERO_NUMERO
+      if (layer.layerName) {
+        const match1 = layer.layerName.match(/layer_(\d+)_/);
+        if (match1) layerId = match1[1];
+      }
+      
+      // Padrão 2: dataVar como json_NUMERO
+      if (!layerId && layer.options && layer.options.dataVar) {
+        const match2 = layer.options.dataVar.match(/json_(\d+)/);
+        if (match2) layerId = match2[1];
+      }
+      
+      // Padrão 3: ID direto nas propriedades da feature
+      if (!layerId && layer.feature && layer.feature.properties) {
+        const props = layer.feature.properties;
+        if (props.id && targetLayerIds.includes(String(props.id))) {
+          layerId = String(props.id);
         }
       }
+      
+      if (layerId && targetLayerIds.includes(layerId)) {
+        foundLayers.push({
+          layer: layer,
+          id: layerId
+        });
+      }
     });
+    
+    // Debug: mostra todas as camadas encontradas no console
+    console.log('=== DEBUG: Todas as camadas do mapa ===');
+    debugInfo.forEach((info, index) => {
+      console.log(`Camada ${index}:`, info);
+    });
+    
+    console.log('=== Camadas alvo encontradas ===', foundLayers);
     
     return foundLayers;
   }
@@ -77,29 +113,68 @@
       const layer = layerInfo.layer;
       const id = layerInfo.id;
       
-      // Busca as propriedades nas features da camada
+      // Busca as propriedades nas features da camada - versão expandida
       let props = {};
+      let name = id; // fallback para o ID da camada
       
+      // Método 1: feature direta
       if (layer.feature && layer.feature.properties) {
         props = layer.feature.properties;
-      } else if (layer.options && layer.options.properties) {
+        console.log(`Camada ${id} - Props diretas:`, props);
+      }
+      // Método 2: options.properties  
+      else if (layer.options && layer.options.properties) {
         props = layer.options.properties;
-      } else if (layer._layers) {
-        // Se a camada tem subcamadas, pega a primeira feature encontrada
+        console.log(`Camada ${id} - Props nas options:`, props);
+      }
+      // Método 3: subcamadas (GeoJSON layers)
+      else if (layer._layers) {
         const layers = Object.values(layer._layers);
-        if (layers.length > 0 && layers[0].feature && layers[0].feature.properties) {
-          props = layers[0].feature.properties;
+        console.log(`Camada ${id} - Tem ${layers.length} subcamadas`);
+        
+        if (layers.length > 0) {
+          // Tenta a primeira subcamada
+          if (layers[0].feature && layers[0].feature.properties) {
+            props = layers[0].feature.properties;
+            console.log(`Camada ${id} - Props da primeira subcamada:`, props);
+          }
+          
+          // Se não encontrou, tenta todas as subcamadas
+          if (!props.id && !props.Área) {
+            for (let sublayer of layers) {
+              if (sublayer.feature && sublayer.feature.properties) {
+                const subProps = sublayer.feature.properties;
+                if (subProps.id || subProps.Área || subProps['Área Verd']) {
+                  props = subProps;
+                  console.log(`Camada ${id} - Props encontradas em subcamada:`, props);
+                  break;
+                }
+              }
+            }
+          }
         }
       }
 
-      const name = props.id || id; // Usa o ID da propriedade ou o ID da camada
+      // Tenta extrair o nome de várias formas
+      if (props.id) name = String(props.id);
+      else if (props.nome) name = String(props.nome);
+      else if (props.name) name = String(props.name);
+      else name = `Propriedade ${id}`;
+
       const area = parseNumber(props['Área'] || props['Area'] || props.area || props['AREA'] || 0);
       const areaVerd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || props['areaverd'] || props['Área_Verd'] || 0);
+      
+      console.log(`Camada ${id} processada:`, {
+        name: name,
+        area: area,
+        areaVerd: areaVerd,
+        propsKeys: Object.keys(props)
+      });
       
       totalArea += area; 
       totalAreaVerd += areaVerd;
       contributions.push({ 
-        name: String(name), 
+        name: name, 
         area: area, 
         areaverd: areaVerd 
       });
