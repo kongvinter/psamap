@@ -83,7 +83,7 @@
       propsListEl.innerHTML = '';
       contributions.forEach(c => {
         const li = document.createElement('li');
-        li.textContent = ID: ${c.id} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')};
+        li.textContent = `ID: ${c.id} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')}`;
         propsListEl.appendChild(li);
       });
     }
@@ -161,3 +161,4 @@
   });
 
 })();
+

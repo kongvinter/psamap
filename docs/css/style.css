@@ -1,9 +1,9 @@
 :root{
-  --bg-1: #fdf6e3; /* fundo claro */
-  --glow-1: #ff3b3b; /* vermelho principal */
-  --glow-2: #ff6b6b; /* vermelho secundário neon */
-  --accent: #f5d6ba; /* cor dos botões e detalhes */
-  --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente claro */
+  --bg-1: #fdfdfd; /* fundo claro minimalista */
+  --accent: #f5d6ba; /* cor dos botões */
+  --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente */
+  --text-color: #000000; /* letras pretas */
+  --text-outline: #ffffff; /* contorno branco */
 }
 
 /* Regras globais */
@@ -12,7 +12,7 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: 'Press Start 2P', monospace;
-  background: radial-gradient(circle at 20% 10%, rgba(245,214,186,0.1), transparent 10%), linear-gradient(180deg, var(--bg-1), #f0e8d0 60%);
+  background: var(--bg-1);
 }
 
 /* Mapa */
@@ -31,20 +31,20 @@ html, body {
   z-index: 1000;
   background: var(--accent);
   border: 2px solid #cfa16b;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 8px 12px;
   font-family: 'Press Start 2P', monospace;
   font-size: 12px;
-  color: #ff3b3b;
+  color: var(--text-color);
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.12s ease;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 #stats-btn:hover {
-  background: #ffddb3;
-  transform: translateY(-2px);
+  background: #fce5c7;
+  transform: translateY(-1px);
 }
 
-/* Painel lateral */
+/* Painel lateral minimalista */
 #stats-panel{
   position: absolute;
   z-index: 1001;
@@ -52,28 +52,38 @@ html, body {
   left: 10px;
   font-family: 'Press Start 2P', monospace;
   background: var(--panel-bg);
-  border: 3px solid rgba(245,214,186,0.2);
-  color: var(--glow-1);
-  padding: 18px;
-  max-width: 520px;
+  border: 1px solid rgba(0,0,0,0.1);
+  color: var(--text-color);
+  padding: 16px;
   width: 360px;
-  border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(255,107,107,0.05);
-  backdrop-filter: blur(4px);
+  border-radius: 6px;
+  backdrop-filter: blur(2px);
 }
-#stats-panel h2, #stats-panel h4 { color: var(--glow-1); font-size:12px; margin:0 0 8px 0; }
-#stats-panel p, #stats-panel li { color: #ff3b3b; font-size:10px; line-height:1.4; }
+#stats-panel h2, #stats-panel h4 { 
+  color: var(--text-color); 
+  font-size: 12px; 
+  margin: 0 0 6px 0; 
+  -webkit-text-stroke: 1px var(--text-outline);
+  text-stroke: 1px var(--text-outline);
+}
+#stats-panel p, #stats-panel li { 
+  color: var(--text-color); 
+  font-size: 10px; 
+  line-height:1.4;
+  -webkit-text-stroke: 0.5px var(--text-outline);
+  text-stroke: 0.5px var(--text-outline);
+}
 #stats-panel .list-controls button, #stats-panel button {
   background: transparent;
-  border:1px solid rgba(245,214,186,0.2);
-  color: var(--accent);
+  border:1px solid rgba(0,0,0,0.1);
+  color: var(--text-color);
   padding:6px 8px;
-  border-radius:6px;
+  border-radius:4px;
   cursor:pointer;
 }
-#stats-panel .list-controls button:hover, #stats-panel button:hover { transform: translateY(-2px); }
-#stats-panel canvas { background: linear-gradient(180deg, rgba(245,214,186,0.02), rgba(245,214,186,0.01)); border-radius:6px; }
-.side-panel { width: 360px; }
+#stats-panel .list-controls button:hover, #stats-panel button:hover { 
+  transform: translateY(-1px); 
+}
 
 /* classe utilitária para ocultar elementos */
 .hidden { display: none !important; }
@@ -88,10 +98,7 @@ canvas{ image-rendering: pixelated; }
   #stats-panel{ left:8px; width: calc(100% - 16px); top: 60px; max-height: 60vh; border-radius:6px; }
 }
 
-/* Pequenos toques visuais estilo UI JRPG anos 2000 */
+/* Removendo gradientes e efeitos extras */
 .stats-panel::before{
-  content: '';
-  position:absolute; left:10px; right:10px; top:10px; height:3px; 
-  background: linear-gradient(90deg, var(--glow-1), var(--glow-2)); 
-  opacity:0.08; border-radius:2px;
+  content: none;
 }
