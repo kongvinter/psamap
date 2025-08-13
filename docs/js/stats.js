@@ -136,18 +136,46 @@
 
   window.webmapStats = { updateStats: updateStats, sortBy: sortBy };
 
+  // === substituição robusta do bloco DOMContentLoaded ===
   document.addEventListener('DOMContentLoaded', function(){
-    // botão de abrir/fechar painel
+    // botão de abrir/fechar painel (robusto)
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
+    const closeBtn = document.getElementById("close-panel");
 
-    if (btn && panel){
-      btn.addEventListener("click", function () {
-        panel.classList.toggle("hidden");
-        if (!panel.classList.contains("hidden")) {
-          window.webmapStats.updateStats();
-        }
-      });
+    function openPanel() {
+      if (!panel) return;
+      panel.classList.remove('hidden');
+      // remove qualquer display inline que force ocultação
+      panel.style.removeProperty('display');
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.style.zIndex = panel.style.zIndex || '99999';
+      // atualiza estatísticas logo após abrir (pequeno timeout para aliviar concorrência)
+      if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
+        setTimeout(() => window.webmapStats.updateStats(), 50);
+      }
+    }
+
+    function closePanel() {
+      if (!panel) return;
+      panel.classList.add('hidden');
+      panel.style.display = 'none';
+    }
+
+    if (!btn || !panel) {
+      console.warn('[stats] btn ou panel não encontrados no DOM.');
+      return;
+    }
+
+    btn.addEventListener('click', function () {
+      const computed = getComputedStyle(panel).display;
+      if (computed === 'none') openPanel(); else closePanel();
+      console.log('Clique registrado — estado agora:', getComputedStyle(panel).display);
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closePanel);
     }
 
     // primeira atualização automática (após o mapa carregar)
@@ -157,5 +185,6 @@
       }
     }, 800);
   });
+  // === fim da substituição ===
 
 })();

@@ -26,7 +26,7 @@
   /* Botão Estatísticas: usamos sua posição e aparência original, mas mantemos a fonte pixel JRPG */
   #stats-btn {
     position: absolute; /* mantive absolute para coexistir com layout qgis2web */
-    top: 100px;
+    top: 130px;
     left: 10px; /* sua preferência: botão à esquerda */
     z-index: 5000;
     background: #f5d6ba; /* cor bege do seu css original */
