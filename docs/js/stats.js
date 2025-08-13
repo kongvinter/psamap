@@ -1,4 +1,4 @@
-// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id e com destaque visual
+// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id
 (function(){
 
   function parseNumber(v){
@@ -9,6 +9,7 @@
     return isNaN(n) ? 0 : n;
   }
 
+  // Percorre todas as camadas do mapa e retorna apenas as que possuem exatamente "Área" e "Área Verd"
   function getTargetLayers(map) {
     const layers = [];
     const seenIds = new Set();
@@ -36,7 +37,6 @@
 
   let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
-  let highlightedLayers = [];
 
   function updateStats(){
     const map = window.map || window._map || null;
@@ -44,47 +44,23 @@
 
     const features = getTargetLayers(map);
 
-    // Limpar destaque anterior de forma segura
-    highlightedLayers.forEach(layer => {
-      if (layer._originalStyle && layer.setStyle) {
-        layer.setStyle(layer._originalStyle);
-      }
-    });
-    highlightedLayers = [];
-
-    // Extrair contribuições únicas
+    // Extrai somente id, Área e Área Verd e garante unicidade
     const contributions = [];
     const seenIds = new Set();
-    const layersToHighlight = [];
 
     features.forEach(layer => {
       const props = layer.feature.properties;
       const id = props.id || props.name || null;
-      if (!id || seenIds.has(id)) return;
+      if (!id || seenIds.has(id)) return; // ignora duplicados
       const area = parseNumber(props['Área'] || props.area || 0);
       const areaverd = parseNumber(props['Área Verd'] || props.areaverd || 0);
       if (area > 0 || areaverd > 0) {
         contributions.push({ id, area, areaverd });
         seenIds.add(id);
-        layersToHighlight.push(layer);
       }
     });
 
     lastContributions = contributions.slice();
-
-    // Destacar camadas válidas
-    layersToHighlight.forEach(layer => {
-      if (layer.setStyle) {
-        if (!layer._originalStyle) layer._originalStyle = {...layer.options};
-        layer.setStyle({
-          color: '#FF0000',
-          weight: 3,
-          fillColor: '#FF0000',
-          fillOpacity: 0.3
-        });
-        highlightedLayers.push(layer);
-      }
-    });
 
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
@@ -115,6 +91,7 @@
       });
     }
 
+    // Função de construir gráfico
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
       if (!el) return;
