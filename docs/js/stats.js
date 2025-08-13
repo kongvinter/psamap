@@ -1,7 +1,6 @@
-// js/stats.js — versão atualizada para capturar camadas numeradas específicas
+// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id
 (function(){
 
-  // ===== Funções auxiliares =====
   function parseNumber(v){
     if (v === null || v === undefined) return 0;
     if (typeof v === 'number') return v;
@@ -10,233 +9,89 @@
     return isNaN(n) ? 0 : n;
   }
 
-  // Lista das camadas numeradas que queremos capturar
-  const targetLayerIds = [
-    '143292', '33782', '6170', '84347', '151959', '39859', '71398', '43918',
-    '143293', '6169', '84344', '84345', '79199', '14779', '7859', '92556',
-    '103699', '81', '14780', '104089', '79197', '151005', '171295', '116124'
-  ];
+  // Percorre todas as camadas do mapa e retorna apenas as que possuem exatamente "Área" e "Área Verd"
+  function getTargetLayers(map) {
+    const layers = [];
+    const seenIds = new Set();
 
-  // Função para encontrar o grupo "Propriedades Aderidas"
-  function findPropriedadesAderidasGroup(map) {
-    if (!map || typeof map.eachLayer !== 'function') return null;
-    
-    let groupFound = null;
-    
-    // Tenta encontrar no window primeiro (como estava no código original)
-    if (window.PropriedadesAderidasLayerGroup) {
-      return window.PropriedadesAderidasLayerGroup;
-    }
-    
-    // Procura nas camadas do mapa
-    map.eachLayer(function(layer) {
-      if (layer && layer.groupName === 'Propriedades Aderidas') {
-        groupFound = layer;
-      }
-    });
-    
-    if (groupFound) return groupFound;
-    
-    // Procura em overlayMaps se existir
-    if (window.overlayMaps && window.overlayMaps['Propriedades Aderidas']) {
-      return window.overlayMaps['Propriedades Aderidas'];
-    }
-    
-    return null;
-  }
+    function traverse(layer) {
+      if (!layer) return;
+      if (layer.feature && layer.feature.properties) {
+        const props = layer.feature.properties;
+        const keys = Object.keys(props);
+        const id = props.id || props.name || null;
 
-  // Função para encontrar as camadas numeradas dentro do grupo
-  function findTargetLayers(map){
-    if (!map) return [];
-    
-    const group = findPropriedadesAderidasGroup(map);
-    
-    if (!group) {
-      console.log('=== Grupo "Propriedades Aderidas" não encontrado ===');
-      return [];
+        if (id && !seenIds.has(id) && keys.includes('Área') && keys.includes('Área Verd') && keys.length === 2) {
+          layers.push(layer);
+          seenIds.add(id);
+        }
+      }
+      if (layer._layers) {
+        for (const sub of Object.values(layer._layers)) traverse(sub);
+      }
     }
-    
-    console.log('=== Grupo "Propriedades Aderidas" encontrado ===', group);
-    
-    const foundLayers = [];
-    let groupLayers = [];
-    
-    // Extrai as camadas do grupo
-    if (typeof group.getLayers === 'function') {
-      groupLayers = group.getLayers();
-    } else if (group._layers) {
-      groupLayers = Object.values(group._layers);
-    }
-    
-    console.log(`=== ${groupLayers.length} camadas no grupo ===`);
-    
-    groupLayers.forEach(function(layer, index) {
-      const layerInfo = {
-        index: index,
-        layerName: layer.layerName || 'undefined',
-        dataVar: layer.options ? layer.options.dataVar : 'undefined',
-        constructor: layer.constructor.name,
-        hasFeature: !!(layer.feature),
-        hasLayers: !!(layer._layers)
-      };
-      
-      console.log(`Camada do grupo ${index}:`, layerInfo);
-      
-      // Tenta identificar o ID da camada
-      let layerId = null;
-      
-      // Padrão 1: layerName como layer_NUMERO_NUMERO
-      if (layer.layerName) {
-        const match1 = layer.layerName.match(/layer_(\d+)_/);
-        if (match1) layerId = match1[1];
-      }
-      
-      // Padrão 2: dataVar como json_NUMERO
-      if (!layerId && layer.options && layer.options.dataVar) {
-        const match2 = layer.options.dataVar.match(/json_(\d+)/);
-        if (match2) layerId = match2[1];
-      }
-      
-      // Padrão 3: ID nas propriedades da feature
-      if (!layerId && layer.feature && layer.feature.properties && layer.feature.properties.id) {
-        layerId = String(layer.feature.properties.id);
-      }
-      
-      console.log(`Camada ${index} - ID identificado: ${layerId}`);
-      
-      if (layerId && targetLayerIds.includes(layerId)) {
-        foundLayers.push({
-          layer: layer,
-          id: layerId
-        });
-        console.log(`✓ Camada ${layerId} adicionada à lista`);
-      }
-    });
-    
-    console.log('=== Camadas alvo encontradas no grupo ===', foundLayers);
-    return foundLayers;
+
+    map.eachLayer(layer => traverse(layer));
+    return layers;
   }
 
   let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
 
-  // ===== Atualiza estatísticas =====
   function updateStats(){
     const map = window.map || window._map || null;
-    const targetLayers = findTargetLayers(map);
+    if (!map) return;
+
+    let features = getTargetLayers(map);
+
+    // Extrai somente id, Área e Área Verd
+    let contributions = features.map(layer => {
+      const props = layer.feature.properties;
+      return {
+        id: props.id || props.name || 'N/A',
+        area: parseNumber(props['Área'] || props.area || 0),
+        areaverd: parseNumber(props['Área Verd'] || props.areaverd || 0)
+      };
+    });
+
+    // Filtra camadas irrelevantes (área total = 0)
+    contributions = contributions.filter(c => c.area > 0 || c.areaverd > 0);
+
+    lastContributions = contributions.slice();
 
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
     const totalGreenEl = document.getElementById('total-green');
     const propsListEl = document.getElementById('props-list');
 
-    const layerCountEl = document.getElementById('layer-count');
-    const areaTotalEl = document.getElementById('area-total');
-    const areaverdTotalEl = document.getElementById('areaverd-total');
-
-    if (targetLayers.length === 0){
-      if (layerCountEl) layerCountEl.textContent = 'Nenhuma camada numerada encontrada.';
+    if (contributions.length === 0){
       if (totalPropsEl) totalPropsEl.textContent = '0';
-      if (areaTotalEl) areaTotalEl.textContent = '—';
-      if (areaverdTotalEl) areaverdTotalEl.textContent = '—';
+      if (totalAreaEl) totalAreaEl.textContent = '—';
+      if (totalGreenEl) totalGreenEl.textContent = '—';
+      if (propsListEl) propsListEl.innerHTML = '';
       return;
     }
 
-    if (layerCountEl) layerCountEl.textContent = 'Camadas encontradas: ' + targetLayers.length;
-    if (totalPropsEl) totalPropsEl.textContent = String(targetLayers.length);
+    const totalArea = contributions.reduce((sum,c) => sum + c.area, 0);
+    const totalAreaVerd = contributions.reduce((sum,c) => sum + c.areaverd, 0);
 
-    let totalArea = 0, totalAreaVerd = 0;
-    const contributions = [];
-
-    targetLayers.forEach(function(layerInfo){
-      const layer = layerInfo.layer;
-      const id = layerInfo.id;
-      
-      // Busca as propriedades nas features da camada - versão expandida
-      let props = {};
-      let name = id; // fallback para o ID da camada
-      
-      // Método 1: feature direta
-      if (layer.feature && layer.feature.properties) {
-        props = layer.feature.properties;
-        console.log(`Camada ${id} - Props diretas:`, props);
-      }
-      // Método 2: options.properties  
-      else if (layer.options && layer.options.properties) {
-        props = layer.options.properties;
-        console.log(`Camada ${id} - Props nas options:`, props);
-      }
-      // Método 3: subcamadas (GeoJSON layers)
-      else if (layer._layers) {
-        const layers = Object.values(layer._layers);
-        console.log(`Camada ${id} - Tem ${layers.length} subcamadas`);
-        
-        if (layers.length > 0) {
-          // Tenta a primeira subcamada
-          if (layers[0].feature && layers[0].feature.properties) {
-            props = layers[0].feature.properties;
-            console.log(`Camada ${id} - Props da primeira subcamada:`, props);
-          }
-          
-          // Se não encontrou, tenta todas as subcamadas
-          if (!props.id && !props.Área) {
-            for (let sublayer of layers) {
-              if (sublayer.feature && sublayer.feature.properties) {
-                const subProps = sublayer.feature.properties;
-                if (subProps.id || subProps.Área || subProps['Área Verd']) {
-                  props = subProps;
-                  console.log(`Camada ${id} - Props encontradas em subcamada:`, props);
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Tenta extrair o nome de várias formas
-      if (props.id) name = String(props.id);
-      else if (props.nome) name = String(props.nome);
-      else if (props.name) name = String(props.name);
-      else name = `Propriedade ${id}`;
-
-      const area = parseNumber(props['Área'] || props['Area'] || props.area || props['AREA'] || 0);
-      const areaVerd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || props['areaverd'] || props['Área_Verd'] || 0);
-      
-      console.log(`Camada ${id} processada:`, {
-        name: name,
-        area: area,
-        areaVerd: areaVerd,
-        propsKeys: Object.keys(props)
-      });
-      
-      totalArea += area; 
-      totalAreaVerd += areaVerd;
-      contributions.push({ 
-        name: name, 
-        area: area, 
-        areaverd: areaVerd 
-      });
-    });
-
+    if (totalPropsEl) totalPropsEl.textContent = String(contributions.length);
     if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
-    if (areaverdTotalEl) areaverdTotalEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
     if (totalGreenEl) totalGreenEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
 
     if (propsListEl){
       propsListEl.innerHTML = '';
-      contributions.forEach(function(c){
+      contributions.forEach(c => {
         const li = document.createElement('li');
-        li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR');
+        li.textContent = ID: ${c.id} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')};
         propsListEl.appendChild(li);
       });
     }
 
-    lastContributions = contributions.slice();
-
+    // Função de construir gráfico
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
-      if (!el) return null;
+      if (!el) return;
       const ctx = el.getContext('2d');
 
       if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea=null; }
@@ -244,98 +99,46 @@
 
       const cfg = {
         type: 'pie',
-        data: { 
-          labels: labels, 
-          datasets: [{ 
-            data: values, 
-            borderWidth: 1,
-            backgroundColor: [
-              '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-              '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-              '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
-              '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
-              '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
-            ]
-          }] 
-        },
-        options: { 
-          plugins: { 
-            legend: { position: 'bottom' }, 
-            tooltip: { 
-              callbacks: { 
-                label: function(ctx) { 
-                  return ctx.label + ': ' + ctx.parsed.toLocaleString('pt-BR'); 
-                } 
-              } 
-            } 
-          } 
-        }
+        data: { labels, datasets: [{ data: values, borderWidth: 1, backgroundColor: [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+          '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+          '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
+          '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
+          '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
+        ]}] },
+        options: { plugins: { legend: { position: 'bottom' } } }
       };
 
-      const c = new Chart(ctx, cfg);
-      if (canvasId === 'chart-area') chartArea = c;
-      if (canvasId === 'chart-areaverd') chartAreaVerd = c;
-      return c;
+      const chart = new Chart(ctx, cfg);
+      if (canvasId === 'chart-area') chartArea = chart;
+      if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
     }
 
-    const labels = contributions.map(c => c.name);
+    const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
     const valuesAreaVerd = contributions.map(c => c.areaverd);
 
-    const allZeroA = valuesArea.every(v => v === 0);
-    const allZeroV = valuesAreaVerd.every(v => v === 0);
+    buildChart('chart-area', valuesArea, labels);
+    buildChart('chart-areaverd', valuesAreaVerd, labels);
 
-    buildChart('chart-area', allZeroA ? labels.map(() => 1) : valuesArea, labels);
-    buildChart('chart-areaverd', allZeroV ? labels.map(() => 1) : valuesAreaVerd, labels);
-
-    console.log('Stats updated:', {
-      totalLayers: targetLayers.length,
-      totalArea: totalArea,
-      totalAreaVerd: totalAreaVerd,
-      contributions: contributions
-    });
+    console.log('Estatísticas atualizadas', contributions);
   }
 
-  function sortBy(mode){
-    if (!lastContributions || lastContributions.length === 0) return;
-    const arr = lastContributions.slice();
-    if (mode === 'areaverd') {
-      arr.sort((a,b) => b.areaverd - a.areaverd);
-    } else {
-      arr.sort((a,b) => b.area - a.area);
-    }
-    const propsListEl = document.getElementById('props-list');
-    if (!propsListEl) return;
-    propsListEl.innerHTML = '';
-    arr.forEach(function(c){ 
-      const li = document.createElement('li'); 
-      li.textContent = c.name + ' — Área: ' + c.area.toLocaleString('pt-BR') + ' | Área Verd: ' + c.areaverd.toLocaleString('pt-BR'); 
-      propsListEl.appendChild(li); 
-    });
-  }
+  window.webmapStats = { updateStats };
 
-  window.webmapStats = { updateStats: updateStats, sortBy: sortBy };
-
-  // ===== Controle do painel (abertura/fechamento) =====
   document.addEventListener('DOMContentLoaded', function(){
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
 
-    if (!btn || !panel) {
-      console.warn('[stats] btn ou panel não encontrados no DOM.');
-      return;
-    }
+    if (!btn || !panel) return;
 
-    // Funções de abrir e fechar painel
     function openPanel() {
       panel.classList.remove('hidden');
       panel.style.display = 'block';
       panel.style.visibility = 'visible';
       panel.style.zIndex = '1001';
-      if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
-        setTimeout(() => window.webmapStats.updateStats(), 50);
-      }
+      setTimeout(() => window.webmapStats.updateStats(), 50);
     }
 
     function closePanel() {
@@ -343,30 +146,18 @@
       panel.style.display = 'none';
     }
 
-    // Botão principal alterna abrir/fechar
     btn.addEventListener('click', function () {
       const computed = getComputedStyle(panel).display;
       if (computed === 'none') openPanel(); else closePanel();
     });
 
-    // Botão interno fecha painel
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
-
-    // Fecha ao clicar fora do painel
     document.addEventListener('click', (event) => {
-      if (!panel.contains(event.target) && !btn.contains(event.target)) {
-        closePanel();
-      }
+      if (!panel.contains(event.target) && !btn.contains(event.target)) closePanel();
     });
 
-    // Inicializa painel oculto
     panel.classList.add('hidden');
-
-    // Atualização inicial de estatísticas
-    setTimeout(function(){ 
-      if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') {
-        window.webmapStats.updateStats();
-      }
-    }, 1000); // Aumentei o timeout para dar tempo das camadas carregarem
+    setTimeout(() => window.webmapStats.updateStats(), 1000);
   });
+
 })();
