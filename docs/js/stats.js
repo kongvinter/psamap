@@ -1,4 +1,4 @@
-// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id
+// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id e com destaque visual
 (function(){
 
   function parseNumber(v){
@@ -9,7 +9,6 @@
     return isNaN(n) ? 0 : n;
   }
 
-  // Percorre todas as camadas do mapa e retorna apenas as que possuem exatamente "Área" e "Área Verd"
   function getTargetLayers(map) {
     const layers = [];
     const seenIds = new Set();
@@ -37,6 +36,7 @@
 
   let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
+  let highlightedLayers = [];
 
   function updateStats(){
     const map = window.map || window._map || null;
@@ -44,19 +44,36 @@
 
     const features = getTargetLayers(map);
 
-    // Extrai somente id, Área e Área Verd e garante unicidade
+    // Limpa destaque anterior
+    highlightedLayers.forEach(layer => {
+      if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
+    });
+    highlightedLayers = [];
+
     const contributions = [];
     const seenIds = new Set();
 
     features.forEach(layer => {
       const props = layer.feature.properties;
       const id = props.id || props.name || null;
-      if (!id || seenIds.has(id)) return; // ignora duplicados
+      if (!id || seenIds.has(id)) return;
       const area = parseNumber(props['Área'] || props.area || 0);
       const areaverd = parseNumber(props['Área Verd'] || props.areaverd || 0);
       if (area > 0 || areaverd > 0) {
         contributions.push({ id, area, areaverd });
         seenIds.add(id);
+
+        // Destacar camada no mapa
+        if (layer.setStyle) {
+          if (!layer._originalStyle) layer._originalStyle = {...layer.options};
+          layer.setStyle({
+            color: '#FF0000',
+            weight: 3,
+            fillColor: '#FF0000',
+            fillOpacity: 0.3
+          });
+          highlightedLayers.push(layer);
+        }
       }
     });
 
@@ -91,7 +108,6 @@
       });
     }
 
-    // Função de construir gráfico
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
       if (!el) return;
