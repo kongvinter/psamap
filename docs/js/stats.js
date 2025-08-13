@@ -44,14 +44,18 @@
 
     const features = getTargetLayers(map);
 
-    // Limpa destaque anterior
+    // Limpar destaque anterior de forma segura
     highlightedLayers.forEach(layer => {
-      if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
+      if (layer._originalStyle && layer.setStyle) {
+        layer.setStyle(layer._originalStyle);
+      }
     });
     highlightedLayers = [];
 
+    // Extrair contribuições únicas
     const contributions = [];
     const seenIds = new Set();
+    const layersToHighlight = [];
 
     features.forEach(layer => {
       const props = layer.feature.properties;
@@ -62,22 +66,25 @@
       if (area > 0 || areaverd > 0) {
         contributions.push({ id, area, areaverd });
         seenIds.add(id);
-
-        // Destacar camada no mapa
-        if (layer.setStyle) {
-          if (!layer._originalStyle) layer._originalStyle = {...layer.options};
-          layer.setStyle({
-            color: '#FF0000',
-            weight: 3,
-            fillColor: '#FF0000',
-            fillOpacity: 0.3
-          });
-          highlightedLayers.push(layer);
-        }
+        layersToHighlight.push(layer);
       }
     });
 
     lastContributions = contributions.slice();
+
+    // Destacar camadas válidas
+    layersToHighlight.forEach(layer => {
+      if (layer.setStyle) {
+        if (!layer._originalStyle) layer._originalStyle = {...layer.options};
+        layer.setStyle({
+          color: '#FF0000',
+          weight: 3,
+          fillColor: '#FF0000',
+          fillOpacity: 0.3
+        });
+        highlightedLayers.push(layer);
+      }
+    });
 
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
