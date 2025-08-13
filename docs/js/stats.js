@@ -1,3 +1,4 @@
+// js/stats.js — versão filtrando camadas com Área > 0 ou Área Verd > 0
 (function(){
 
   function parseNumber(v){
@@ -8,97 +9,118 @@
     return isNaN(n) ? 0 : n;
   }
 
-  // Pega todas as camadas do mapa com feature.properties
   function getAllMapFeatures(map) {
     const layers = [];
-    map.eachLayer(layer => {
-      if (layer.feature && layer.feature.properties && layer.feature.properties['Área'] !== undefined) {
-        layers.push(layer);
-      } else if (layer._layers) {
-        for (const l of Object.values(layer._layers)) {
-          if (l.feature && l.feature.properties && l.feature.properties['Área'] !== undefined) {
-            layers.push(l);
-          }
-        }
+
+    function traverse(layer) {
+      if (!layer) return;
+      if (layer.feature && layer.feature.properties) layers.push(layer);
+      if (layer._layers) {
+        for (const sub of Object.values(layer._layers)) traverse(sub);
       }
-    });
+    }
+
+    map.eachLayer(layer => traverse(layer));
     return layers;
   }
 
+  let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
 
   function updateStats(){
     const map = window.map || window._map || null;
     if (!map) return;
 
-    const targetLayers = getAllMapFeatures(map);
+    let features = getAllMapFeatures(map);
+
+    // Extrai somente id, Área e Área Verd
+    let contributions = features.map(layer => {
+      const props = layer.feature.properties;
+      return {
+        id: props.id || 'N/A',
+        area: parseNumber(props['Área'] || props['Area'] || props.area || 0),
+        areaverd: parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || 0)
+      };
+    });
+
+    // Filtra camadas irrelevantes (área total = 0)
+    contributions = contributions.filter(c => c.area > 0 || c.areaverd > 0);
+
+    lastContributions = contributions.slice();
 
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
     const totalGreenEl = document.getElementById('total-green');
     const propsListEl = document.getElementById('props-list');
 
-    if (targetLayers.length === 0){
+    if (contributions.length === 0){
       if (totalPropsEl) totalPropsEl.textContent = '0';
       if (totalAreaEl) totalAreaEl.textContent = '—';
       if (totalGreenEl) totalGreenEl.textContent = '—';
+      if (propsListEl) propsListEl.innerHTML = '';
       return;
     }
 
-    let totalArea = 0, totalAreaVerd = 0;
-    const contributions = [];
+    const totalArea = contributions.reduce((sum,c) => sum + c.area, 0);
+    const totalAreaVerd = contributions.reduce((sum,c) => sum + c.areaverd, 0);
 
-    targetLayers.forEach(layer => {
-      const props = layer.feature.properties;
-      const name = props.nome || props.name || `Propriedade ${props.id || ''}`;
-
-      const area = parseNumber(props['Área'] || props['Area'] || 0);
-      const areaVerd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['area_verd'] || 0);
-
-      totalArea += area;
-      totalAreaVerd += areaVerd;
-
-      contributions.push({ name, area, areaverd: areaVerd });
-    });
-
-    if (totalPropsEl) totalPropsEl.textContent = targetLayers.length;
+    if (totalPropsEl) totalPropsEl.textContent = String(contributions.length);
     if (totalAreaEl) totalAreaEl.textContent = totalArea.toLocaleString('pt-BR');
     if (totalGreenEl) totalGreenEl.textContent = totalAreaVerd.toLocaleString('pt-BR');
 
     if (propsListEl){
       propsListEl.innerHTML = '';
-      contributions.forEach(c=>{
+      contributions.forEach(c => {
         const li = document.createElement('li');
-        li.textContent = `${c.name} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')}`;
+        li.textContent = `ID: ${c.id} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')}`;
         propsListEl.appendChild(li);
       });
     }
 
-    lastContributions = contributions.slice();
+    // Função de construir gráfico
+    function buildChart(canvasId, values, labels){
+      const el = document.getElementById(canvasId);
+      if (!el) return;
+      const ctx = el.getContext('2d');
+
+      if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea=null; }
+      if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd=null; }
+
+      const cfg = {
+        type: 'pie',
+        data: { labels, datasets: [{ data: values, borderWidth: 1, backgroundColor: [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+          '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+          '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
+          '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
+          '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
+        ]}] },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      };
+
+      const chart = new Chart(ctx, cfg);
+      if (canvasId === 'chart-area') chartArea = chart;
+      if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
+    }
+
+    const labels = contributions.map(c => c.id);
+    const valuesArea = contributions.map(c => c.area);
+    const valuesAreaVerd = contributions.map(c => c.areaverd);
+
+    buildChart('chart-area', valuesArea, labels);
+    buildChart('chart-areaverd', valuesAreaVerd, labels);
+
+    console.log('Estatísticas atualizadas', contributions);
   }
 
-  function sortBy(mode){
-    if (!lastContributions || lastContributions.length === 0) return;
-    const arr = lastContributions.slice();
-    if (mode === 'areaverd') arr.sort((a,b) => b.areaverd - a.areaverd);
-    else arr.sort((a,b) => b.area - a.area);
-
-    const propsListEl = document.getElementById('props-list');
-    if (!propsListEl) return;
-    propsListEl.innerHTML = '';
-    arr.forEach(c=>{
-      const li = document.createElement('li');
-      li.textContent = `${c.name} — Área: ${c.area.toLocaleString('pt-BR')} | Área Verd: ${c.areaverd.toLocaleString('pt-BR')}`;
-      propsListEl.appendChild(li);
-    });
-  }
-
-  window.webmapStats = { updateStats, sortBy };
+  window.webmapStats = { updateStats };
 
   document.addEventListener('DOMContentLoaded', function(){
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
+
+    if (!btn || !panel) return;
 
     function openPanel() {
       panel.classList.remove('hidden');
@@ -113,10 +135,11 @@
       panel.style.display = 'none';
     }
 
-    if (btn) btn.addEventListener('click', () => {
+    btn.addEventListener('click', function () {
       const computed = getComputedStyle(panel).display;
       if (computed === 'none') openPanel(); else closePanel();
     });
+
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
     document.addEventListener('click', (event) => {
       if (!panel.contains(event.target) && !btn.contains(event.target)) closePanel();
@@ -127,6 +150,3 @@
   });
 
 })();
-
-
-
