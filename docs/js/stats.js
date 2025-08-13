@@ -1,6 +1,7 @@
-// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id e com destaque visual
+// js/stats.js — painel de estatísticas com destaque de camadas únicas
 (function(){
 
+  // ===== Funções auxiliares =====
   function parseNumber(v){
     if (v === null || v === undefined) return 0;
     if (typeof v === 'number') return v;
@@ -13,29 +14,30 @@
     const layers = [];
     const seenIds = new Set();
 
-    function traverse(layer) {
+    function traverse(layer){
       if (!layer) return;
+
+      // Verifica se é camada com feature
       if (layer.feature && layer.feature.properties) {
         const props = layer.feature.properties;
-        const keys = Object.keys(props);
-        const id = props.id || props.name || null;
-
-        if (id && !seenIds.has(id) && keys.includes('Área') && keys.includes('Área Verd') && keys.length === 2) {
+        const id = props.id || props.name;
+        if (id && !seenIds.has(id) && 'Área' in props && 'Área Verd' in props) {
           layers.push(layer);
           seenIds.add(id);
         }
       }
+
+      // Recursivamente percorre subcamadas
       if (layer._layers) {
-        for (const sub of Object.values(layer._layers)) traverse(sub);
+        Object.values(layer._layers).forEach(traverse);
       }
     }
 
-    map.eachLayer(layer => traverse(layer));
+    map.eachLayer(traverse);
     return layers;
   }
 
   let chartArea = null, chartAreaVerd = null;
-  let lastContributions = [];
   let highlightedLayers = [];
 
   function updateStats(){
@@ -44,11 +46,9 @@
 
     const features = getTargetLayers(map);
 
-    // Limpar destaque anterior de forma segura
+    // Restaurar estilo original das camadas destacadas
     highlightedLayers.forEach(layer => {
-      if (layer._originalStyle && layer.setStyle) {
-        layer.setStyle(layer._originalStyle);
-      }
+      if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
     });
     highlightedLayers = [];
 
@@ -59,10 +59,12 @@
 
     features.forEach(layer => {
       const props = layer.feature.properties;
-      const id = props.id || props.name || null;
+      const id = props.id || props.name;
       if (!id || seenIds.has(id)) return;
-      const area = parseNumber(props['Área'] || props.area || 0);
-      const areaverd = parseNumber(props['Área Verd'] || props.areaverd || 0);
+
+      const area = parseNumber(props['Área']);
+      const areaverd = parseNumber(props['Área Verd']);
+
       if (area > 0 || areaverd > 0) {
         contributions.push({ id, area, areaverd });
         seenIds.add(id);
@@ -70,9 +72,7 @@
       }
     });
 
-    lastContributions = contributions.slice();
-
-    // Destacar camadas válidas
+    // Destacar camadas no mapa
     layersToHighlight.forEach(layer => {
       if (layer.setStyle) {
         if (!layer._originalStyle) layer._originalStyle = {...layer.options};
@@ -86,6 +86,7 @@
       }
     });
 
+    // Atualizar painel
     const totalPropsEl = document.getElementById('total-props');
     const totalAreaEl = document.getElementById('total-area');
     const totalGreenEl = document.getElementById('total-green');
@@ -115,13 +116,14 @@
       });
     }
 
+    // Construir gráficos
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
       if (!el) return;
       const ctx = el.getContext('2d');
 
-      if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea=null; }
-      if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd=null; }
+      if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea = null; }
+      if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd = null; }
 
       const cfg = {
         type: 'pie',
@@ -150,8 +152,10 @@
     console.log('Estatísticas atualizadas', contributions);
   }
 
+  // Expor função global
   window.webmapStats = { updateStats };
 
+  // ===== Inicialização do painel =====
   document.addEventListener('DOMContentLoaded', function(){
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
@@ -187,6 +191,3 @@
   });
 
 })();
-
-
-
