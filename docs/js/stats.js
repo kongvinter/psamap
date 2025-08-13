@@ -1,7 +1,6 @@
-// js/stats.js — versão completa com gráficos, sem carregar JSON
+// js/stats.js — versão completa, sem JSON externo
 (function(){
 
-  // ===== Funções auxiliares =====
   function parseNumber(v){
     if (v === null || v === undefined) return 0;
     if (typeof v === 'number') return v;
@@ -9,12 +8,6 @@
     const n = parseFloat(s);
     return isNaN(n) ? 0 : n;
   }
-
-  const targetLayerIds = [
-    '143292', '33782', '6170', '84347', '151959', '39859', '71398', '43918',
-    '143293', '6169', '84344', '84345', '79199', '14779', '7859', '92556',
-    '103699', '81', '14780', '104089', '79197', '151005', '171295', '116124'
-  ];
 
   // ===== Encontrar grupo "Propriedades Aderidas" =====
   function findPropriedadesAderidasGroup(map){
@@ -33,7 +26,7 @@
     return groupFound;
   }
 
-  // ===== Encontrar camadas alvo =====
+  // ===== Encontrar todas as camadas do grupo =====
   function findTargetLayers(map){
     const group = findPropriedadesAderidasGroup(map);
     if (!group) return [];
@@ -43,21 +36,14 @@
 
     groupLayers.forEach(layer => {
       let layerId = null;
-
       if (layer.layerName) {
         const m = layer.layerName.match(/layer_(\d+)_/);
         if (m) layerId = m[1];
       }
-
-      if (!layerId && layer.options && layer.options.dataVar) {
-        const m = layer.options.dataVar.match(/json_(\d+)/);
-        if (m) layerId = m[1];
-      }
-
       if (!layerId && layer.feature && layer.feature.properties && layer.feature.properties.id)
         layerId = String(layer.feature.properties.id);
 
-      if (layerId && targetLayerIds.includes(layerId)) foundLayers.push({ layer, id: layerId });
+      foundLayers.push({ layer, id: layerId || 'unknown' });
     });
 
     return foundLayers;
@@ -66,7 +52,6 @@
   let chartArea = null, chartAreaVerd = null;
   let lastContributions = [];
 
-  // ===== Atualizar estatísticas e gráficos =====
   function updateStats(){
     const map = window.map || window._map || null;
     const targetLayers = findTargetLayers(map);
@@ -126,7 +111,6 @@
 
     lastContributions = contributions.slice();
 
-    // ===== Construir gráficos =====
     function buildChart(canvasId, values, labels){
       const el = document.getElementById(canvasId);
       if (!el) return null;
@@ -137,32 +121,14 @@
 
       const cfg = {
         type: 'pie',
-        data: { 
-          labels: labels, 
-          datasets: [{ 
-            data: values, 
-            borderWidth: 1,
-            backgroundColor: [
-              '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-              '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-              '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
-              '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
-              '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
-            ]
-          }] 
-        },
-        options: { 
-          plugins: { 
-            legend: { position: 'bottom' }, 
-            tooltip: { 
-              callbacks: { 
-                label: function(ctx) { 
-                  return ctx.label + ': ' + ctx.parsed.toLocaleString('pt-BR'); 
-                } 
-              } 
-            } 
-          } 
-        }
+        data: { labels, datasets: [{ data: values, borderWidth: 1, backgroundColor: [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+          '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+          '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
+          '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
+          '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
+        ]}]},
+        options: { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toLocaleString('pt-BR') } } } }
       };
 
       const c = new Chart(ctx, cfg);
@@ -235,3 +201,5 @@
   });
 
 })();
+
+
