@@ -1,4 +1,4 @@
-// js/stats.js — versão filtrando camadas com Área > 0 ou Área Verd > 0
+// js/stats.js — filtrando camadas com "Área" e "Área Verd", únicas por id
 (function(){
 
   function parseNumber(v){
@@ -9,12 +9,23 @@
     return isNaN(n) ? 0 : n;
   }
 
-  function getAllMapFeatures(map) {
+  // Percorre todas as camadas do mapa e retorna apenas as que possuem exatamente "Área" e "Área Verd"
+  function getTargetLayers(map) {
     const layers = [];
+    const seenIds = new Set();
 
     function traverse(layer) {
       if (!layer) return;
-      if (layer.feature && layer.feature.properties) layers.push(layer);
+      if (layer.feature && layer.feature.properties) {
+        const props = layer.feature.properties;
+        const keys = Object.keys(props);
+        const id = props.id || props.name || null;
+
+        if (id && !seenIds.has(id) && keys.includes('Área') && keys.includes('Área Verd') && keys.length === 2) {
+          layers.push(layer);
+          seenIds.add(id);
+        }
+      }
       if (layer._layers) {
         for (const sub of Object.values(layer._layers)) traverse(sub);
       }
@@ -31,15 +42,15 @@
     const map = window.map || window._map || null;
     if (!map) return;
 
-    let features = getAllMapFeatures(map);
+    let features = getTargetLayers(map);
 
     // Extrai somente id, Área e Área Verd
     let contributions = features.map(layer => {
       const props = layer.feature.properties;
       return {
-        id: props.id || 'N/A',
-        area: parseNumber(props['Área'] || props['Area'] || props.area || 0),
-        areaverd: parseNumber(props['Área Verd'] || props['Area Verd'] || props['ÁreaVerd'] || props['area_verd'] || 0)
+        id: props.id || props.name || 'N/A',
+        area: parseNumber(props['Área'] || props.area || 0),
+        areaverd: parseNumber(props['Área Verd'] || props.areaverd || 0)
       };
     });
 
