@@ -120,19 +120,35 @@
       });
     }
 
-          // Construir gráficos (treemap / matriz de retângulos estilo imagem)
+              // ---------- buildChart usando D3.js (treemap maior, legenda abaixo) ----------
     function buildChart(canvasId, values, labels){
-      const el = document.getElementById(canvasId);
+      // requer D3.js (https://d3js.org/d3.v7.min.js) incluído no HTML
+      if (typeof d3 === 'undefined') {
+        console.error('D3.js não encontrado. Inclua <script src="https://d3js.org/d3.v7.min.js"></script>');
+        return;
+      }
+
+      // localizar elemento alvo (pode ser canvas ou div). Se for canvas, substitui por div contêiner
+      let el = document.getElementById(canvasId);
       if (!el) return;
-      const ctx = el.getContext('2d');
+      if (el.tagName.toLowerCase() === 'canvas') {
+        const wrapper = document.createElement('div');
+        wrapper.id = canvasId;
+        wrapper.className = 'd3-treemap-wrapper';
+        el.parentNode.replaceChild(wrapper, el);
+        el = wrapper;
+      }
 
-      // destruir estado anterior / limpar listeners
+      // destruir renderizações anteriores
       try {
-        if (canvasId === 'chart-area' && chartArea) { if (chartArea.destroy) chartArea.destroy(); chartArea = null; }
-        if (canvasId === 'chart-areaverd' && chartAreaVerd) { if (chartAreaVerd.destroy) chartAreaVerd.destroy(); chartAreaVerd = null; }
-      } catch(e){ /* ignorar */ }
+        if (canvasId === 'chart-area' && chartArea && chartArea.destroy) chartArea.destroy();
+        if (canvasId === 'chart-areaverd' && chartAreaVerd && chartAreaVerd.destroy) chartAreaVerd.destroy();
+      } catch(e){ /* ignore */ }
 
-      // paleta (mesma base ampla)
+      // limpar conteúdo
+      el.innerHTML = '';
+
+      // parâmetros visuais e paleta
       const palette = [
         '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
         '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
@@ -140,8 +156,7 @@
         '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
         '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
       ];
-
-      function lightenColor(color, percent) {
+      function lightenColorHex(color, percent) {
         const num = parseInt(String(color).replace("#",""),16);
         const amt = Math.round(255 * percent);
         let R = (num >> 16) + amt;
@@ -152,174 +167,76 @@
         B = Math.max(0, Math.min(255, B));
         return "#" + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
       }
+      function shortNumber(n) {
+        if (!isFinite(n)) return '0';
+        const abs = Math.abs(n);
+        if (abs >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+        if (abs >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'K';
+        return n.toString();
+      }
 
-      // parâmetros visuais
+      // dimensões responsivas (usa clientWidth/clientHeight do elemento)
+      const style = getComputedStyle(el);
+      const width = Math.max(220, Math.floor(el.clientWidth || parseInt(style.width) || 320));
+      const height = Math.max(160, Math.floor(el.clientHeight || parseInt(style.height) || 240));
+
+      // layout: reservar legenda fixa embaixo (sem que treemap invada)
       const padding = 8;
-      const legendReserve = 80; // espaço inferior possível para legendas
-      const lightForGreen = 0.38; // clareamento para Área Verde
+      const legendHeight = Math.max(80, Math.floor(height * 0.24)); // espaço reservado para legenda (fixo proporcional)
+      const treemapSize = Math.min(width - padding*2, height - padding*2 - legendHeight);
+      const treemapLeft = Math.round((width - treemapSize) / 2);
 
-      // dimensões e DPR-aware
-      const rect = el.getBoundingClientRect();
-      const DPR = window.devicePixelRatio || 1;
-      const width = Math.max(220, Math.floor(rect.width));
-      const height = Math.max(160, Math.floor(rect.height));
-      el.width = Math.floor(width * DPR);
-      el.height = Math.floor(height * DPR);
-      el.style.width = width + 'px';
-      el.style.height = height + 'px';
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      ctx.clearRect(0,0,width,height);
+      // preparar container SVG
+      const svg = d3.select(el)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .style('display','block');
 
-      // área do treemap: quadro quadrado (como na imagem)
-      const tmX = padding;
-      const tmY = padding;
-      const tmW = Math.min(width - padding*2, height - padding*2 - legendReserve);
-      const tmH = tmW;
-      const legendX = tmX + tmW + 12;
-      const legendY = tmY;
-      const legendMaxWidth = Math.max(100, width - legendX - padding);
+      // criar grupo para treemap e legenda
+      const gTreemap = svg.append('g').attr('transform', `translate(${treemapLeft}, ${padding})`);
+      const gLegend = svg.append('g').attr('transform', `translate(${padding}, ${padding + treemapSize + 8})`);
 
-      // preparar dados
+      // preparar dados (hierarquia com children)
       const vals = values.map(v => (isFinite(v) ? Number(v) : 0));
       const totalVal = vals.reduce((s,x) => s + x, 0);
       const nodes = labels.map((lbl,i) => ({
-        id: String(lbl),
+        name: String(lbl),
         value: vals[i],
         color: palette[i % palette.length]
       }));
-      if (canvasId === 'chart-areaverd') nodes.forEach(n => n.color = lightenColor(n.color, lightForGreen));
 
+      // se for gráfico 'chart-areaverd', clarear cores
+      if (canvasId === 'chart-areaverd') nodes.forEach(n => n.color = lightenColorHex(n.color, 0.38));
+
+      // se sem dados, desenhar placeholder
       if (totalVal === 0) {
-        // caso sem dados
-        ctx.fillStyle = '#f2f2f2';
-        ctx.fillRect(tmX, tmY, tmW, tmH);
-        ctx.fillStyle = '#666';
-        ctx.font = '12px sans-serif';
-        ctx.fillText('Sem dados', tmX + 10, tmY + 20);
-        const stateEmpty = { canvasId, destroy: ()=>{ ctx.clearRect(0,0,width,height); } };
-        if (canvasId === 'chart-area') chartArea = stateEmpty;
-        if (canvasId === 'chart-areaverd') chartAreaVerd = stateEmpty;
+        gTreemap.append('rect')
+          .attr('width', treemapSize)
+          .attr('height', treemapSize)
+          .attr('fill', '#f2f2f2');
+        gTreemap.append('text')
+          .attr('x', 12).attr('y', 22).attr('fill', '#666').attr('font-size', 12).text('Sem dados');
+        // estado simples para destruição
+        const emptyState = { canvasId, destroy: () => { svg.remove(); } };
+        if (canvasId === 'chart-area') chartArea = emptyState;
+        if (canvasId === 'chart-areaverd') chartAreaVerd = emptyState;
         return;
       }
 
-      // converter valores em áreas px^2 proporcionalmente ao retângulo do treemap
-      const totalAreaPx = tmW * tmH;
-      const items = nodes
-        .map(n => ({ id: n.id, value: n.value, color: n.color, area: Math.max(1e-6, (n.value / totalVal) * totalAreaPx) }))
-        .sort((a,b) => b.area - a.area);
+      // montar hierarquia D3 e treemap (squarified)
+      const root = d3.hierarchy({ children: nodes })
+        .sum(d => Math.max(0, d.value))
+        .sort((a,b) => b.value - a.value);
 
-      const rects = [];
+      d3.treemap()
+        .size([treemapSize, treemapSize])
+        .paddingInner(2)
+        .round(true)
+        (root);
 
-      // funções squarify (versão adaptada)
-      function worstAspect(row, sideLength) {
-        if (!row.length) return Infinity;
-        let sum = 0, maxA = -Infinity, minA = Infinity;
-        row.forEach(r => { sum += r.area; maxA = Math.max(maxA, r.area); minA = Math.min(minA, r.area); });
-        const s2 = sideLength * sideLength;
-        return Math.max( (s2 * maxA) / (sum * sum), (sum * sum) / (s2 * Math.max(minA, 1e-12)) );
-      }
-      function layoutRow(row, rectObj, horizontal) {
-        const sumArea = row.reduce((s,r)=>s+r.area,0);
-        if (horizontal) {
-          const rowHeight = sumArea / rectObj.w;
-          let x = rectObj.x;
-          for (let i=0;i<row.length;i++){
-            const w = row[i].area / rowHeight;
-            rects.push({ x: x, y: rectObj.y, w: w, h: rowHeight, id: row[i].id, color: row[i].color, value: row[i].value });
-            x += w;
-          }
-          rectObj.y += rowHeight;
-          rectObj.h -= rowHeight;
-        } else {
-          const colWidth = sumArea / rectObj.h;
-          let y = rectObj.y;
-          for (let i=0;i<row.length;i++){
-            const h = row[i].area / colWidth;
-            rects.push({ x: rectObj.x, y: y, w: colWidth, h: h, id: row[i].id, color: row[i].color, value: row[i].value });
-            y += h;
-          }
-          rectObj.x += colWidth;
-          rectObj.w -= colWidth;
-        }
-      }
-      function squarify(itemsList, rectObj) {
-        let row = [];
-        let remaining = itemsList.slice();
-        while (remaining.length > 0) {
-          const node = remaining[0];
-          const shortSide = Math.min(rectObj.w, rectObj.h);
-          if (row.length === 0) {
-            row.push(remaining.shift());
-          } else {
-            const w1 = worstAspect(row, shortSide);
-            const w2 = worstAspect(row.concat([node]), shortSide);
-            if (w2 <= w1) {
-              row.push(remaining.shift());
-            } else {
-              const horizontal = rectObj.w >= rectObj.h;
-              layoutRow(row, rectObj, horizontal);
-              row = [];
-            }
-          }
-          if (remaining.length === 0 && row.length > 0) {
-            const horizontal = rectObj.w >= rectObj.h;
-            layoutRow(row, rectObj, horizontal);
-            row = [];
-          }
-        }
-      }
-
-      // executar squarify
-      squarify(items, { x: tmX, y: tmY, w: tmW, h: tmH });
-
-      // desenhar retângulos (fills + bordas)
-      rects.forEach(r => {
-        ctx.fillStyle = r.color;
-        ctx.fillRect(r.x, r.y, Math.max(0.5, r.w), Math.max(0.5, r.h));
-        ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(r.x + 0.5, r.y + 0.5, Math.max(0, r.w - 1), Math.max(0, r.h - 1));
-      });
-
-      // texto interno para blocos maiores
-      ctx.fillStyle = '#111';
-      ctx.font = '11px sans-serif';
-      rects.forEach(r => {
-        if (r.w > 48 && r.h > 18) {
-          const text = r.id;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(r.x, r.y, r.w, r.h);
-          ctx.clip();
-          ctx.fillText(text, r.x + 6, r.y + 14);
-          ctx.restore();
-        }
-      });
-
-      // legenda textual à direita / embaixo (id — valor estilizado)
-      function drawLegend(){
-        ctx.font = '12px sans-serif';
-        ctx.fillStyle = '#222';
-        const lineHeight = 18;
-        let y = legendY;
-        let x = legendX;
-        for (let i=0;i<items.length;i++){
-          const it = items[i];
-          // se não cabe à direita, desenha abaixo do treemap
-          if (legendX + 120 > width) { x = padding; y = tmY + tmH + 10 + (i * lineHeight); }
-          ctx.fillStyle = it.color;
-          ctx.fillRect(x, y - 12, 12, 12);
-          ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-          ctx.strokeRect(x + 0.5, y - 11.5, 11, 11);
-          ctx.fillStyle = '#222';
-          const percent = Math.round((it.area / totalAreaPx) * 100);
-          const text = `${it.id} — ${Number(it.value).toLocaleString('pt-BR')} (${percent}%)`;
-          ctx.fillText(text, x + 18, y);
-          y += lineHeight;
-          if (y > tmY + tmH) { x += Math.min(legendMaxWidth, 200); y = legendY; }
-        }
-      }
-      drawLegend();
+      // obter folhas (retângulos)
+      const leaves = root.leaves();
 
       // tooltip DOM
       let tooltip = document.getElementById(canvasId + '-tooltip');
@@ -335,55 +252,40 @@
         tooltip.style.fontSize = '12px';
         tooltip.style.display = 'none';
         tooltip.style.zIndex = 9999;
-        el.parentElement && el.parentElement.appendChild(tooltip);
+        el.style.position = el.style.position || 'relative';
+        el.appendChild(tooltip);
       }
 
-      // util para detectar rect sob o cursor
-      function findRectAt(clientX, clientY) {
-        const bbox = el.getBoundingClientRect();
-        const cx = clientX - bbox.left;
-        const cy = clientY - bbox.top;
-        for (let i=0;i<rects.length;i++){
-          const r = rects[i];
-          if (cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h) return r;
-        }
-        return null;
-      }
+      // desenhar retângulos
+      const leafG = gTreemap.selectAll('g.leaf')
+        .data(leaves, d => d.data.name);
 
-      // limpar listeners antigos (se existirem)
-      function clearHandlers(stateObj) {
-        if (!stateObj) return;
-        if (stateObj._mousemove) el.removeEventListener('mousemove', stateObj._mousemove);
-        if (stateObj._mouseout) el.removeEventListener('mouseout', stateObj._mouseout);
-        if (stateObj._click) el.removeEventListener('click', stateObj._click);
-      }
-      clearHandlers(chartArea);
-      clearHandlers(chartAreaVerd);
+      const leafEnter = leafG.enter().append('g').attr('class','leaf')
+        .attr('transform', d => `translate(${d.x0}, ${d.y0})`);
 
-      // handlers
-      const onMove = function(ev){
-        const r = findRectAt(ev.clientX, ev.clientY);
-        if (r) {
+      leafEnter.append('rect')
+        .attr('width', d => Math.max(0, d.x1 - d.x0))
+        .attr('height', d => Math.max(0, d.y1 - d.y0))
+        .attr('fill', d => d.data.color)
+        .attr('stroke', 'rgba(0,0,0,0.06)')
+        .on('mousemove', function(event, d){
           tooltip.style.display = 'block';
-          tooltip.textContent = `${r.id} — ${Number(r.value).toLocaleString('pt-BR')} (${Math.round((r.area/totalAreaPx)*100)}%)`;
-          const parentRect = el.getBoundingClientRect();
-          tooltip.style.left = (ev.clientX - parentRect.left + 12) + 'px';
-          tooltip.style.top = (ev.clientY - parentRect.top + 12) + 'px';
-        } else {
-          tooltip.style.display = 'none';
-        }
-      };
-      const onOut = function(){ tooltip.style.display = 'none'; };
-      const onClick = function(ev){
-        const r = findRectAt(ev.clientX, ev.clientY);
-        if (r && window.map) {
-          // procurar camada correspondente por id/name e centralizar
+          tooltip.textContent = `${d.data.name} — ${Number(d.data.value).toLocaleString('pt-BR')} (${Math.round(d.value / root.value * 100)}%)`;
+          const bbox = el.getBoundingClientRect();
+          tooltip.style.left = (event.clientX - bbox.left + 12) + 'px';
+          tooltip.style.top = (event.clientY - bbox.top + 12) + 'px';
+        })
+        .on('mouseout', function(){ tooltip.style.display = 'none'; })
+        .on('click', function(event, d){
+          // tenta encontrar camada e centralizar no mapa
+          if (!window.map) return;
+          const targetId = d.data.name;
           let found = null;
           try {
             window.map.eachLayer && window.map.eachLayer(function(layer){
               try {
                 const props = layer.feature && layer.feature.properties;
-                if (props && (String(props.id) === String(r.id) || String(props.name) === String(r.id))) {
+                if (props && (String(props.id) === String(targetId) || String(props.name) === String(targetId))) {
                   found = layer;
                   return;
                 }
@@ -391,43 +293,58 @@
             });
             if (found && found.getBounds) window.map.fitBounds(found.getBounds(), { maxZoom: 16 });
           } catch(e){}
-        }
-      };
+        });
 
-      el.addEventListener('mousemove', onMove);
-      el.addEventListener('mouseout', onOut);
-      el.addEventListener('click', onClick);
+      // rótulos internos apenas para áreas maiores
+      leafEnter.filter(d => (d.x1 - d.x0) > 48 && (d.y1 - d.y0) > 18)
+        .append('text')
+        .attr('x', 6).attr('y', 14)
+        .attr('fill', '#111')
+        .attr('font-size', 11)
+        .text(d => d.data.name);
 
-      // estado para destruição posterior
+      // legenda abaixo — ordenada por valor decrescente (como pie original)
+      const legendData = nodes.slice().sort((a,b) => b.value - a.value);
+      // criar grupo de legend items; cada item (linha) com cor + nome + valor curto alinhado à direita
+      const legendGroup = gLegend.selectAll('g.legendRow').data(legendData, d => d.name);
+      const legendEnter = legendGroup.enter().append('g').attr('class','legendRow')
+        .attr('transform', (d,i) => `translate(0, ${i * 20})`);
+      legendEnter.append('rect').attr('width', 12).attr('height', 12).attr('fill', d => d.color).attr('stroke','rgba(0,0,0,0.06)');
+      legendEnter.append('text').attr('x', 18).attr('y', 10).attr('fill','#222').attr('font-size', 12).text(d => d.name);
+      // valor curto alinhado à direita
+      legendEnter.append('text')
+        .attr('class','legendValue')
+        .attr('x', width - padding)
+        .attr('y', 10)
+        .attr('text-anchor','end')
+        .attr('fill','#222')
+        .attr('font-size', 12)
+        .text(d => shortNumber(d.value));
+
+      // salvar estado para possível destruição
       const state = {
         canvasId,
-        rects,
-        _mousemove: onMove,
-        _mouseout: onOut,
-        _click: onClick,
+        svgNode: svg.node(),
         destroy: function(){
           try {
-            ctx.clearRect(0,0,width,height);
-            el.removeEventListener('mousemove', onMove);
-            el.removeEventListener('mouseout', onOut);
-            el.removeEventListener('click', onClick);
+            // remove SVG e tooltip
             if (tooltip && tooltip.parentElement) tooltip.parentElement.removeChild(tooltip);
+            svg.remove();
           } catch(e){}
         }
       };
-
       if (canvasId === 'chart-area') chartArea = state;
       if (canvasId === 'chart-areaverd') chartAreaVerd = state;
     }
 
-    // preparar labels e arrays (mantendo fluxo)
+    // preparar labels/arrays e chamar (mantendo fluxo)
     const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
     const valuesAreaVerd = contributions.map(c => c.areaverd);
 
-    // chamadas originais — agora renderizam treemaps
     buildChart('chart-area', valuesArea, labels);
     buildChart('chart-areaverd', valuesAreaVerd, labels);
+
 
   }
   window.webmapStats = { updateStats, contributions };
