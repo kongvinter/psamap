@@ -1,8 +1,8 @@
-:root{
-  --bg-1: #ffffff; /* fundo claro */
+:root {
+  --bg-1: #f5f5f5; /* fundo claro */
   --glow-1: #000000; /* preto principal */
-  --glow-2: #555555; /* cinza médio */
-  --accent: #cccccc; /* cinza claro para botões e detalhes */
+  --glow-2: #555555; /* cinza secundário */
+  --accent: #cccccc; /* cor dos botões e detalhes */
   --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente claro */
 }
 
@@ -13,7 +13,7 @@ html, body {
   padding: 0;
   font-family: 'Press Start 2P', monospace;
   background: radial-gradient(circle at 20% 10%, rgba(200,200,200,0.1), transparent 10%), 
-              linear-gradient(180deg, var(--bg-1), #e5e5e5 60%);
+              linear-gradient(180deg, var(--bg-1), #e0e0e0 60%);
 }
 
 /* Mapa */
@@ -31,7 +31,7 @@ html, body {
   left: 10px;
   z-index: 1000;
   background: var(--accent);
-  border: 2px solid #999999;
+  border: 2px solid #888888;
   border-radius: 8px;
   padding: 8px 12px;
   font-family: 'Press Start 2P', monospace;
@@ -46,53 +46,98 @@ html, body {
 }
 
 /* Painel lateral */
-#stats-panel{
+#stats-panel {
   position: absolute;
   z-index: 1001;
   top: 160px;
   left: 10px;
   font-family: 'Press Start 2P', monospace;
   background: var(--panel-bg);
-  border: 3px solid rgba(200,200,200,0.2);
+  border: 3px solid rgba(200, 200, 200, 0.2);
   color: var(--glow-1);
   padding: 18px;
   max-width: 520px;
   width: 360px;
   border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(0,0,0,0.05);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 
+              0 0 30px rgba(100,100,100,0.05);
   backdrop-filter: blur(4px);
+
+  /* Scroll */
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f0f0f0;
 }
-#stats-panel h2, #stats-panel h4 { color: var(--glow-1); font-size:12px; margin:0 0 8px 0; }
-#stats-panel p, #stats-panel li { color: var(--glow-1); font-size:10px; line-height:1.4; }
+#stats-panel::-webkit-scrollbar {
+  width: 8px;
+}
+#stats-panel::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+#stats-panel::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+#stats-panel::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+#stats-panel h2, #stats-panel h4 { 
+  color: var(--glow-1); 
+  font-size: 12px; 
+  margin: 0 0 8px 0; 
+}
+#stats-panel p, #stats-panel li { 
+  color: var(--glow-2); 
+  font-size: 10px; 
+  line-height: 1.4; 
+}
 #stats-panel .list-controls button, #stats-panel button {
   background: transparent;
-  border:1px solid rgba(200,200,200,0.2);
-  color: var(--accent);
-  padding:6px 8px;
-  border-radius:6px;
-  cursor:pointer;
+  border: 1px solid rgba(200, 200, 200, 0.2);
+  color: var(--glow-1);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
 }
-#stats-panel .list-controls button:hover, #stats-panel button:hover { transform: translateY(-2px); }
-#stats-panel canvas { background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); border-radius:6px; }
+#stats-panel .list-controls button:hover, #stats-panel button:hover { 
+  transform: translateY(-2px); 
+}
+#stats-panel canvas { 
+  background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); 
+  border-radius: 6px; 
+}
 .side-panel { width: 360px; }
 
 /* classe utilitária para ocultar elementos */
 .hidden { display: none !important; }
 
 /* Toque retro nos canvases */
-canvas{ image-rendering: pixelated; }
+canvas { image-rendering: pixelated; }
 
 /* Responsividade */
 @media (max-width:900px){
-  .charts{ flex-direction:column; }
-  #stats-btn{ left:12px; top:6vh; padding:10px 12px; }
-  #stats-panel{ left:8px; width: calc(100% - 16px); top: 60px; max-height: 60vh; border-radius:6px; }
+  .charts { flex-direction: column; }
+  #stats-btn { left: 12px; top: 6vh; padding: 10px 12px; }
+  #stats-panel { 
+    left: 8px; 
+    width: calc(100% - 16px); 
+    top: 60px; 
+    max-height: 60vh; 
+    border-radius: 6px; 
+  }
 }
 
 /* Pequenos toques visuais estilo UI JRPG anos 2000 */
-.stats-panel::before{
+.stats-panel::before {
   content: '';
-  position:absolute; left:10px; right:10px; top:10px; height:3px; 
+  position: absolute; 
+  left: 10px; 
+  right: 10px; 
+  top: 10px; 
+  height: 3px; 
   background: linear-gradient(90deg, var(--glow-1), var(--glow-2)); 
-  opacity:0.08; border-radius:2px;
+  opacity: 0.08; 
+  border-radius: 2px;
 }
