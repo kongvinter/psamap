@@ -1,8 +1,8 @@
 :root{
-  --bg-1: #fdf6e3; /* fundo claro */
-  --glow-1: #ff3b3b; /* vermelho principal */
-  --glow-2: #ff6b6b; /* vermelho secundário neon */
-  --accent: #f5d6ba; /* cor dos botões e detalhes */
+  --bg-1: #ffffff; /* fundo claro */
+  --glow-1: #000000; /* preto principal */
+  --glow-2: #555555; /* cinza médio */
+  --accent: #cccccc; /* cinza claro para botões e detalhes */
   --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente claro */
 }
 
@@ -12,7 +12,8 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: 'Press Start 2P', monospace;
-  background: radial-gradient(circle at 20% 10%, rgba(245,214,186,0.1), transparent 10%), linear-gradient(180deg, var(--bg-1), #f0e8d0 60%);
+  background: radial-gradient(circle at 20% 10%, rgba(200,200,200,0.1), transparent 10%), 
+              linear-gradient(180deg, var(--bg-1), #e5e5e5 60%);
 }
 
 /* Mapa */
@@ -30,17 +31,17 @@ html, body {
   left: 10px;
   z-index: 1000;
   background: var(--accent);
-  border: 2px solid #cfa16b;
+  border: 2px solid #999999;
   border-radius: 8px;
   padding: 8px 12px;
   font-family: 'Press Start 2P', monospace;
   font-size: 12px;
-  color: #ff3b3b;
+  color: var(--glow-1);
   cursor: pointer;
   transition: background 0.3s ease, transform 0.12s ease;
 }
 #stats-btn:hover {
-  background: #ffddb3;
+  background: #dddddd;
   transform: translateY(-2px);
 }
 
@@ -52,27 +53,27 @@ html, body {
   left: 10px;
   font-family: 'Press Start 2P', monospace;
   background: var(--panel-bg);
-  border: 3px solid rgba(245,214,186,0.2);
+  border: 3px solid rgba(200,200,200,0.2);
   color: var(--glow-1);
   padding: 18px;
   max-width: 520px;
   width: 360px;
   border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(255,107,107,0.05);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(0,0,0,0.05);
   backdrop-filter: blur(4px);
 }
 #stats-panel h2, #stats-panel h4 { color: var(--glow-1); font-size:12px; margin:0 0 8px 0; }
-#stats-panel p, #stats-panel li { color: #ff3b3b; font-size:10px; line-height:1.4; }
+#stats-panel p, #stats-panel li { color: var(--glow-1); font-size:10px; line-height:1.4; }
 #stats-panel .list-controls button, #stats-panel button {
   background: transparent;
-  border:1px solid rgba(245,214,186,0.2);
+  border:1px solid rgba(200,200,200,0.2);
   color: var(--accent);
   padding:6px 8px;
   border-radius:6px;
   cursor:pointer;
 }
 #stats-panel .list-controls button:hover, #stats-panel button:hover { transform: translateY(-2px); }
-#stats-panel canvas { background: linear-gradient(180deg, rgba(245,214,186,0.02), rgba(245,214,186,0.01)); border-radius:6px; }
+#stats-panel canvas { background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); border-radius:6px; }
 .side-panel { width: 360px; }
 
 /* classe utilitária para ocultar elementos */
