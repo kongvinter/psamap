@@ -1,7 +1,6 @@
-// js/stats.js — painel de estatísticas com destaque de camadas únicas
+/// js/stats.js — painel de estatísticas com destaque de camadas únicas
 (function(){
 
-  // ===== Funções auxiliares =====
   function parseNumber(v){
     if (v === null || v === undefined) return 0;
     if (typeof v === 'number') return v;
@@ -16,8 +15,6 @@
 
     function traverse(layer){
       if (!layer) return;
-
-      // Verifica se é camada com feature
       if (layer.feature && layer.feature.properties) {
         const props = layer.feature.properties;
         const id = props.id || props.name;
@@ -26,11 +23,7 @@
           seenIds.add(id);
         }
       }
-
-      // Recursivamente percorre subcamadas
-      if (layer._layers) {
-        Object.values(layer._layers).forEach(traverse);
-      }
+      if (layer._layers) Object.values(layer._layers).forEach(traverse);
     }
 
     map.eachLayer(traverse);
@@ -39,21 +32,20 @@
 
   let chartArea = null, chartAreaVerd = null;
   let highlightedLayers = [];
+  let contributions = []; // mover para escopo global para usar nos botões
 
-  function updateStats(){
+  function updateStats(orderBy = null){
     const map = window.map || window._map || null;
     if (!map) return;
 
     const features = getTargetLayers(map);
 
-    // Restaurar estilo original das camadas destacadas
     highlightedLayers.forEach(layer => {
       if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
     });
     highlightedLayers = [];
 
-    // Extrair contribuições únicas
-    const contributions = [];
+    contributions = [];
     const seenIds = new Set();
     const layersToHighlight = [];
 
@@ -85,6 +77,13 @@
         highlightedLayers.push(layer);
       }
     });
+
+    // Ordenar se solicitado
+    if(orderBy === 'area'){
+      contributions.sort((a,b) => b.area - a.area);
+    } else if(orderBy === 'areaverd'){
+      contributions.sort((a,b) => b.areaverd - a.areaverd);
+    }
 
     // Atualizar painel
     const totalPropsEl = document.getElementById('total-props');
@@ -148,18 +147,17 @@
 
     buildChart('chart-area', valuesArea, labels);
     buildChart('chart-areaverd', valuesAreaVerd, labels);
-
-    console.log('Estatísticas atualizadas', contributions);
   }
 
-  // Expor função global
-  window.webmapStats = { updateStats };
+  window.webmapStats = { updateStats, contributions };
 
-  // ===== Inicialização do painel =====
   document.addEventListener('DOMContentLoaded', function(){
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
+
+    const sortAreaBtn = document.getElementById("sort-area");
+    const sortGreenBtn = document.getElementById("sort-areaverd");
 
     if (!btn || !panel) return;
 
@@ -185,6 +183,10 @@
     document.addEventListener('click', (event) => {
       if (!panel.contains(event.target) && !btn.contains(event.target)) closePanel();
     });
+
+    // Botões de ordenação
+    if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
+    if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
 
     panel.classList.add('hidden');
     setTimeout(() => window.webmapStats.updateStats(), 1000);
