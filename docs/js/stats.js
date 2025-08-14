@@ -198,5 +198,26 @@
     panel.classList.add('hidden');
     setTimeout(() => window.webmapStats.updateStats(), 1000);
   });
+// ===== Estilizar título do mapa no mesmo estilo do painel =====
+setTimeout(() => {
+  const mapTitle = document.querySelector('.leaflet-control div'); // ajusta para o seletor do título
+  if(mapTitle){
+    mapTitle.textContent = "";  // título que você quer
+    mapTitle.style.background = 'var(--panel-bg)';
+    mapTitle.style.color = 'var(--glow-1)';
+    mapTitle.style.padding = '8px 12px';
+    mapTitle.style.border = '3px solid rgba(200,200,200,0.2)';
+    mapTitle.style.borderRadius = '10px';
+    mapTitle.style.fontFamily = "'Press Start 2P', monospace";
+    mapTitle.style.fontSize = '12px';
+    mapTitle.style.position = 'absolute';
+    mapTitle.style.top = '10px';
+    mapTitle.style.left = '50%';
+    mapTitle.style.transform = 'translateX(-50%)';
+    mapTitle.style.zIndex = 1000;
+    mapTitle.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(100,100,100,0.05)';
+    mapTitle.style.backdropFilter = 'blur(4px)';
+  }
+}, 500);
 
 })();   
