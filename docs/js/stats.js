@@ -184,9 +184,16 @@
       if (!panel.contains(event.target) && !btn.contains(event.target)) closePanel();
     });
 
-    // Botões de ordenação
-    if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
-    if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
+     // Botões de ordenação com teste no console
+     if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => {
+      console.log('Botão Ordenar por Área Total clicado'); // <-- teste
+      window.webmapStats.updateStats('area');
+  });
+
+  if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => {
+      console.log('Botão Ordenar por Área Verde clicado'); // <-- teste
+      window.webmapStats.updateStats('areaverd');
+  });
 
     panel.classList.add('hidden');
     setTimeout(() => window.webmapStats.updateStats(), 1000);
