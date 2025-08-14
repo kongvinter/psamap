@@ -45,30 +45,31 @@ html, body {
   transform: translateY(-2px);
 }
 
-/* Painel lateral */
+/* Painel lateral ajustado */
 #stats-panel {
   position: absolute;
   z-index: 1001;
-  top: 160px;
+  top: 120px; /* leve ajuste para mais espaço no topo */
   left: 10px;
   font-family: 'Press Start 2P', monospace;
   background: var(--panel-bg);
   border: 3px solid rgba(200, 200, 200, 0.2);
   color: var(--glow-1);
-  padding: 18px 4px 18px 18px; /* direita reduzida para scroll encostar */
-  max-width: 520px;
-  width: 360px;
+  padding: 18px 6px 18px 18px; /* direita um pouco mais larga para scroll */
+  width: 480px; /* Aumentei a largura */
+  max-width: 80vw; /* responsivo para telas menores */
   border-radius: 10px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.15), 
               0 0 30px rgba(100,100,100,0.05);
   backdrop-filter: blur(4px);
 
   /* Scroll interno */
-  max-height: 70vh;
+  max-height: 80vh; /* aumenta a altura relativa */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #888 #f0f0f0;
 }
+
 
 /* Scroll personalização */
 #stats-panel::-webkit-scrollbar {
