@@ -116,31 +116,70 @@
     }
 
     // Construir gráficos
-    function buildChart(canvasId, values, labels){
+    function buildChart(canvasId, valuesArea, labels){
       const el = document.getElementById(canvasId);
       if (!el) return;
       const ctx = el.getContext('2d');
-
+    
       if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea = null; }
       if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd = null; }
-
+    
+      // cores base — você pode personalizar
+      const colors = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+        '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
+      ];
+    
+      function lightenColor(color, percent) {
+        const num = parseInt(color.replace("#",""),16),
+              amt = Math.round(2.55 * percent * 100),
+              R = (num >> 16) + amt,
+              G = (num >> 8 & 0x00FF) + amt,
+              B = (num & 0x0000FF) + amt;
+        return "#" + (
+          0x1000000 + 
+          (R<255?R<1?0:R:255)*0x10000 + 
+          (G<255?G<1?0:G:255)*0x100 + 
+          (B<255?B<1?0:B:255)
+        ).toString(16).slice(1);
+      }
+    
       const cfg = {
-        type: 'pie',
-        data: { labels, datasets: [{ data: values, borderWidth: 1, backgroundColor: [
-          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-          '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-          '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
-          '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
-          '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
-        ]}] },
-        options: { plugins: { legend: { position: 'bottom' } } }
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Área Total',
+              data: valuesArea,
+              backgroundColor: colors,
+              borderColor: colors,
+              borderWidth: 1
+            },
+            {
+              label: 'Área Verde',
+              data: contributions.map(c => c.areaverd),
+              backgroundColor: colors.map(c => lightenColor(c, 0.4)),
+              borderColor: colors.map(c => lightenColor(c, 0.4)),
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
+          }
+        }
       };
-
+    
       const chart = new Chart(ctx, cfg);
       if (canvasId === 'chart-area') chartArea = chart;
       if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
     }
-
+    
     const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
     const valuesAreaVerd = contributions.map(c => c.areaverd);
