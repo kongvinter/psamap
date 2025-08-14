@@ -120,259 +120,198 @@
       });
     }
 
-    // ----------------- matrix usando Chart.js (scatter + pointStyle 'rect') -----------------
-    // função utilitária para clarear cor
-    function lightenColor(color, percent){
-      const num = parseInt(String(color).replace("#",""),16);
-      const amt = Math.round(255 * percent);
-      let R = (num >> 16) + amt;
-      let G = (num >> 8 & 0x00FF) + amt;
-      let B = (num & 0x0000FF) + amt;
-      R = Math.max(0, Math.min(255, R));
-      G = Math.max(0, Math.min(255, G));
-      B = Math.max(0, Math.min(255, B));
-      return "#" + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
-    }
-
-    // função que constrói um gráfico matrix com Chart.js
-    function buildMatrixChartWithChartJS(canvasId, values, labels, opts = {}) {
-      const el = document.getElementById(canvasId);
-      if (!el) return;
-
-      // destruir instância Chart.js previa
-      try {
-        if (canvasId === 'chart-area' && chartArea) { chartArea.destroy(); chartArea = null; }
-        if (canvasId === 'chart-areaverd' && chartAreaVerd) { chartAreaVerd.destroy(); chartAreaVerd = null; }
-      } catch (e){ /* ignore */ }
-
-      // opções
-      const maxSquares = typeof opts.maxSquares === 'number' ? opts.maxSquares : 100;
-      const cols = typeof opts.cols === 'number' ? opts.cols : 10;
-      const gap = typeof opts.gap === 'number' ? opts.gap : 2;
-      const padding = typeof opts.padding === 'number' ? opts.padding : 8;
-      const title = opts.title || '';
-      const lighten = !!opts.lighten;
-      const lightFactor = typeof opts.lightFactor === 'number' ? opts.lightFactor : 0.45;
-
-      // paleta
-      const palette = [
-        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-        '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-        '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38'
-      ];
-
-      // cores por label
-      const colors = labels.map((_, i) => palette[i % palette.length]);
-      if (lighten) {
-        for (let i = 0; i < colors.length; i++) colors[i] = lightenColor(colors[i], lightFactor);
-      }
-
-      // calcular squares per label proporcional ao total (mesma lógica de antes)
-      const vals = values.map(v => (isFinite(v) ? Number(v) : 0));
-      const totalVal = vals.reduce((s,x) => s + x, 0);
-      let squaresPerLabel;
-      if (totalVal === 0) {
-        squaresPerLabel = vals.map(_ => 0);
-      } else {
-        const raw = vals.map(v => (v / totalVal) * maxSquares);
-        squaresPerLabel = raw.map(r => Math.floor(r));
-        let remaining = maxSquares - squaresPerLabel.reduce((s,x) => s + x, 0);
-        const decimals = raw.map((r, i) => ({ i, d: r - Math.floor(r) }))
-                            .sort((a,b) => b.d - a.d);
-        let idx = 0;
-        while (remaining > 0 && idx < decimals.length) {
-          squaresPerLabel[decimals[idx].i] += 1;
-          remaining--;
-          idx++;
-          if (idx === decimals.length) idx = 0;
-        }
-      }
-
-      // layout: calculamos rows a partir de maxSquares para manter grade consistente
-      const rows = Math.ceil(maxSquares / cols);
-
-      // tamanho físico do canvas e squareSize estimado (para radius)
-      const rect = el.getBoundingClientRect();
-      const DPR = window.devicePixelRatio || 1;
-      const width = Math.max(200, Math.floor(rect.width));
-      const height = Math.max(120, Math.floor(rect.height));
-      // grid disponível (reservando legenda lateral)
-      const legendWidth = Math.min(220, Math.floor(width * 0.42));
-      const gridWidth = width - legendWidth - padding * 2;
-      const gridHeight = height - (padding + 18) - padding; // reservar topo para título
-
-      const squareSizeW = (gridWidth - (cols - 1) * gap) / cols;
-      const squareSizeH = (gridHeight - (rows - 1) * gap) / rows;
-      const squareSize = Math.max(4, Math.floor(Math.min(squareSizeW, squareSizeH)));
-
-      // construir pontos (cada ponto = um quadradinho)
-      const points = []; // {x, y, labelIndex, label, value, bg}
-      let cursor = 0;
-      for (let labelIndex = 0; labelIndex < labels.length; labelIndex++) {
-        const count = squaresPerLabel[labelIndex];
-        for (let s = 0; s < count; s++) {
-          const pos = cursor;
-          const row = Math.floor(pos / cols);
-          const col = pos % cols;
-          // invert y para ter origem top-left (y aumenta para baixo)
-          const y = (rows - 1) - row;
-          const x = col;
-          points.push({
-            x, y,
-            labelIndex,
-            label: labels[labelIndex],
-            value: values[labelIndex],
-            backgroundColor: colors[labelIndex]
-          });
-          cursor++;
-        }
-      }
-
-      // configurar dimensões do canvas para nitidez
-      el.width = Math.floor(width * DPR);
-      el.height = Math.floor(height * DPR);
-      el.style.width = width + "px";
-      el.style.height = height + "px";
-
-      // plugin para desenhar título na área do gráfico (simples)
-      const titlePlugin = {
-        id: 'matrixTitle',
-        beforeDraw: (chart) => {
-          const ctx = chart.ctx;
-          ctx.save();
-          ctx.scale(1,1);
-          ctx.font = "bold 12px sans-serif";
-          ctx.fillStyle = "#222";
-          ctx.textAlign = "left";
-          ctx.fillText(title, padding, padding + 10);
-          ctx.restore();
-        }
-      };
-
-      // dataset único com muitos pontos
-      const dataset = {
-        label: title || '',
-        data: points.map(p => ({ x: p.x, y: p.y, _meta: p })), // raw point em _meta
-        backgroundColor: points.map(p => p.backgroundColor),
-        borderWidth: 0,
-        pointStyle: 'rect',
-        // radius será definido pela opção no chart (usaremos plugin para escalar)
-      };
-
-      // criar Chart.js
-      const cfg = {
-        type: 'scatter',
-        data: { datasets: [ dataset ] },
-        options: {
-          responsive: false, // já gerenciei o sizing manualmente
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              enabled: true,
-              callbacks: {
-                title: (items) => {
-                  // items[0].raw._meta.label
-                  const raw = items[0].raw;
-                  return String(raw._meta.label);
+        // Construir gráficos (matrix quadrada usando Chart.js)
+        function buildChart(canvasId, values, labels){
+          const el = document.getElementById(canvasId);
+          if (!el) return;
+          const ctx = el.getContext('2d');
+    
+          // destruir instância anterior, se houver
+          if (canvasId === 'chart-area' && chartArea){ try{ chartArea.destroy(); }catch(e){} chartArea = null; }
+          if (canvasId === 'chart-areaverd' && chartAreaVerd){ try{ chartAreaVerd.destroy(); }catch(e){} chartAreaVerd = null; }
+    
+          // paleta (mesma base usada antes, expandida)
+          const palette = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+            '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+            '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
+            '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
+            '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
+          ];
+    
+          // auxiliar para clarear cor
+          function lightenColor(color, percent) {
+            const num = parseInt(String(color).replace("#",""),16);
+            const amt = Math.round(255 * percent);
+            let R = (num >> 16) + amt;
+            let G = (num >> 8 & 0x00FF) + amt;
+            let B = (num & 0x0000FF) + amt;
+            R = Math.max(0, Math.min(255, R));
+            G = Math.max(0, Math.min(255, G));
+            B = Math.max(0, Math.min(255, B));
+            return "#" + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
+          }
+    
+          // parâmetros da matrix
+          const maxSquares = 100; // total de quadradinhos na grade (padrão)
+          const cols = Math.ceil(Math.sqrt(maxSquares)); // matriz quadrada: cols x rows
+          const rows = cols;
+          const gap = 2; // gap visual entre pontos (px)
+          const padding = 6;
+    
+          // saneamento dos valores
+          const vals = values.map(v => (isFinite(v) ? Number(v) : 0));
+          const totalVal = vals.reduce((s,x) => s + x, 0);
+    
+          // calcular quanta "cota" de quadradinhos cada label recebe
+          let squaresPerLabel;
+          if (totalVal === 0) {
+            // se total for zero, distribuir zero para todos
+            squaresPerLabel = vals.map(_ => 0);
+          } else {
+            const raw = vals.map(v => (v / totalVal) * maxSquares);
+            squaresPerLabel = raw.map(r => Math.floor(r));
+            let remaining = maxSquares - squaresPerLabel.reduce((s,x) => s + x, 0);
+            const decimals = raw.map((r, i) => ({ i, d: r - Math.floor(r) }))
+                                .sort((a,b) => b.d - a.d);
+            let idx = 0;
+            while (remaining > 0 && idx < decimals.length) {
+              squaresPerLabel[decimals[idx].i] += 1;
+              remaining--;
+              idx++;
+              if (idx === decimals.length) idx = 0;
+            }
+          }
+    
+          // gerar mapeamento global de posições (0..maxSquares-1) -> labelIndex
+          const posToLabel = new Array(maxSquares).fill(null);
+          let cursor = 0;
+          for (let i = 0; i < squaresPerLabel.length; i++) {
+            const count = squaresPerLabel[i];
+            for (let k = 0; k < count && cursor < maxSquares; k++) {
+              posToLabel[cursor++] = i;
+            }
+          }
+          // se houver posições não atribuídas (caso total < maxSquares), ficam null e não desenhadas
+    
+          // calcular dimensões do canvas e squareSize
+          const rect = el.getBoundingClientRect();
+          const DPR = window.devicePixelRatio || 1;
+          const width = Math.max(200, Math.floor(rect.width));
+          const height = Math.max(120, Math.floor(rect.height));
+          // grid disponível: reservar espaço para legenda do Chart.js (legend abaixo) — usamos grid full para pontos
+          const gridWidth = width - padding * 2;
+          const gridHeight = height - padding * 2 - 18; // deixar topo para título se precisar
+    
+          const squareSizeW = (gridWidth - (cols - 1) * gap) / cols;
+          const squareSizeH = (gridHeight - (rows - 1) * gap) / rows;
+          const squareSize = Math.max(4, Math.floor(Math.min(squareSizeW, squareSizeH)));
+    
+          // preparar datasets: um dataset por label (assim a legenda do Chart.js mostra cada label)
+          const datasets = [];
+          for (let i = 0; i < labels.length; i++) {
+            datasets.push({
+              label: String(labels[i]),
+              data: [], // será preenchido com {x,y}
+              backgroundColor: lightenColor(palette[i % palette.length], canvasId === 'chart-areaverd' ? 0.40 : 0),
+              borderColor: 'rgba(0,0,0,0.06)',
+              pointStyle: 'rect',
+              hoverRadius: Math.max(4, Math.floor(squareSize/2) + 2),
+              radius: Math.max(1, Math.floor(squareSize/2))
+            });
+          }
+    
+          // preencher pontos na grade, sequencialmente
+          for (let pos = 0; pos < maxSquares; pos++) {
+            const labelIndex = posToLabel[pos];
+            if (labelIndex === null || labelIndex === undefined) continue; // vazio
+            const row = Math.floor(pos / cols);
+            const col = pos % cols;
+            // usar y invertido para origin top-left visual (optional)
+            const y = (rows - 1) - row;
+            const x = col;
+            datasets[labelIndex].data.push({ x, y, _value: vals[labelIndex] });
+          }
+    
+          // ajustar canvas físico para hi-dpi
+          el.width = Math.floor(width * DPR);
+          el.height = Math.floor(height * DPR);
+          el.style.width = width + "px";
+          el.style.height = height + "px";
+    
+          // criar configuração Chart.js (scatter)
+          const cfg = {
+            type: 'scatter',
+            data: { datasets },
+            options: {
+              responsive: false,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } },
+                tooltip: {
+                  callbacks: {
+                    title: (items) => {
+                      if (!items || !items.length) return '';
+                      return items[0].dataset.label;
+                    },
+                    label: (item) => {
+                      const v = item.raw && item.raw._value !== undefined ? item.raw._value : '';
+                      return (v !== '') ? Number(v).toLocaleString('pt-BR') : '';
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  type: 'linear',
+                  display: false,
+                  min: -0.5,
+                  max: cols - 0.5,
+                  grid: { display: false },
+                  ticks: { display: false }
                 },
-                label: (item) => {
-                  const raw = item.raw._meta;
-                  return `${Number(raw.value).toLocaleString('pt-BR')}`;
+                y: {
+                  type: 'linear',
+                  display: false,
+                  min: -0.5,
+                  max: rows - 0.5,
+                  grid: { display: false },
+                  ticks: { display: false }
+                }
+              },
+              elements: {
+                point: {
+                  // radius definido por dataset.radius (aceito acima) — Chart.js usará esse valor
+                  pointStyle: 'rectRounded'
                 }
               }
             }
-          },
-          scales: {
-            x: {
-              type: 'linear',
-              min: -0.5,
-              max: cols - 0.5,
-              ticks: { display: false },
-              grid: { display: false }
-            },
-            y: {
-              type: 'linear',
-              min: -0.5,
-              max: rows - 0.5,
-              ticks: { display: false },
-              grid: { display: false }
-            }
-          },
-          // ajusta elementos pontos para manter forma quadrada (usamos scriptable options)
-          elements: {
-            point: {
-              radius: function(ctx) {
-                // ctx.chart: chart, ctx.parsed is point coords
-                // radius em px: metade do squareSize menos um ajuste para gap
-                return Math.max(2, Math.floor(squareSize / 2));
-              },
-              hoverRadius: function(ctx) {
-                return Math.max(3, Math.floor(squareSize / 2) + 2);
-              }
-            }
+          };
+    
+          // verificar Chart.js
+          if (typeof Chart === 'undefined') {
+            console.error('Chart.js não encontrado. Inclua Chart.js para usar o gráfico matrix.');
+            return;
           }
-        },
-        plugins: [ titlePlugin ]
-      };
+    
+          const chart = new Chart(ctx, cfg);
+    
+          if (canvasId === 'chart-area') chartArea = chart;
+          if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
+        }
+    
+        // construir labels e arrays (mantendo seu fluxo original)
+        const labels = contributions.map(c => c.id);
+        const valuesArea = contributions.map(c => c.area);
+        const valuesAreaVerd = contributions.map(c => c.areaverd);
+    
+        // manter chamadas originais (agora cada buildChart renderiza matriz quadrada)
+        buildChart('chart-area', valuesArea, labels);
+        buildChart('chart-areaverd', valuesAreaVerd, labels);
+    
 
-      // garantir que Chart.js esteja disponível
-      if (typeof Chart === 'undefined') {
-        console.error('Chart.js não encontrado — inclua Chart.js para usar gráficos matrix com Chart.js.');
-        return;
-      }
-
-      const chart = new Chart(el.getContext('2d'), cfg);
-
-      // criar ou atualizar legenda DOM após o canvas (id: `${canvasId}-legend`)
-      const existingLegend = document.getElementById(canvasId + '-legend');
-      if (existingLegend) existingLegend.remove();
-      const legendDiv = document.createElement('div');
-      legendDiv.id = canvasId + '-legend';
-      legendDiv.style.fontSize = '12px';
-      legendDiv.style.marginTop = '6px';
-      legendDiv.style.display = 'flex';
-      legendDiv.style.flexDirection = 'column';
-      legendDiv.style.gap = '4px';
-
-      // preencher legenda (cores + texto)
-      for (let i = 0; i < labels.length; i++) {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.alignItems = 'center';
-        const sw = document.createElement('span');
-        sw.style.width = '12px';
-        sw.style.height = '12px';
-        sw.style.display = 'inline-block';
-        sw.style.background = (lighten ? lightenColor(palette[i % palette.length], lightFactor) : palette[i % palette.length]);
-        sw.style.border = '1px solid rgba(0,0,0,0.06)';
-        sw.style.marginRight = '8px';
-        const txt = document.createElement('span');
-        txt.textContent = `${labels[i]} — ${Number(values[i]).toLocaleString('pt-BR')}`;
-        row.appendChild(sw);
-        row.appendChild(txt);
-        legendDiv.appendChild(row);
-      }
-      el.parentNode && el.parentNode.insertBefore(legendDiv, el.nextSibling);
-
-      // guardar instância no estado global
-      if (canvasId === 'chart-area') chartArea = chart;
-      if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
-    }
-
-    // preparar labels e arrays (mantendo seu fluxo)
-    const labels = contributions.map(c => c.id);
-    const valuesArea = contributions.map(c => c.area);
-    const valuesAreaVerd = contributions.map(c => c.areaverd);
-
-    // construir os dois gráficos com Chart.js (matrix)
-    buildMatrixChartWithChartJS('chart-area', valuesArea, labels, { title: 'Área Total', maxSquares: 100, cols: 10 });
-    buildMatrixChartWithChartJS('chart-areaverd', valuesAreaVerd, labels, { title: 'Área Verde', maxSquares: 100, cols: 10, lighten: true, lightFactor: 0.40 });
-
-    // --------------------------------------------------------------------------------------
-
+    // -------------------------------------------------------
   }
-
   window.webmapStats = { updateStats, contributions };
 
   document.addEventListener('DOMContentLoaded', function(){
