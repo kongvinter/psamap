@@ -55,7 +55,7 @@ html, body {
   background: var(--panel-bg);
   border: 3px solid rgba(200, 200, 200, 0.2);
   color: var(--glow-1);
-  padding: 18px;
+  padding: 18px 4px 18px 18px; /* direita reduzida para scroll encostar */
   max-width: 520px;
   width: 360px;
   border-radius: 10px;
@@ -63,12 +63,14 @@ html, body {
               0 0 30px rgba(100,100,100,0.05);
   backdrop-filter: blur(4px);
 
-  /* Scroll */
+  /* Scroll interno */
   max-height: 70vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #888 #f0f0f0;
 }
+
+/* Scroll personalização */
 #stats-panel::-webkit-scrollbar {
   width: 8px;
 }
@@ -83,6 +85,12 @@ html, body {
   background-color: #555;
 }
 
+/* Ajustes visuais do conteúdo interno */
+#stats-panel > *:first-child {
+  margin-top: 0; /* evita deslocamento do topo para scroll */
+}
+
+/* Títulos e textos */
 #stats-panel h2, #stats-panel h4 { 
   color: var(--glow-1); 
   font-size: 12px; 
@@ -93,6 +101,8 @@ html, body {
   font-size: 10px; 
   line-height: 1.4; 
 }
+
+/* Botões internos do painel */
 #stats-panel .list-controls button, #stats-panel button {
   background: transparent;
   border: 1px solid rgba(200, 200, 200, 0.2);
@@ -104,13 +114,15 @@ html, body {
 #stats-panel .list-controls button:hover, #stats-panel button:hover { 
   transform: translateY(-2px); 
 }
+
+/* Canvases internos */
 #stats-panel canvas { 
   background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); 
   border-radius: 6px; 
 }
 .side-panel { width: 360px; }
 
-/* classe utilitária para ocultar elementos */
+/* Classe utilitária para ocultar elementos */
 .hidden { display: none !important; }
 
 /* Toque retro nos canvases */
@@ -126,6 +138,7 @@ canvas { image-rendering: pixelated; }
     top: 60px; 
     max-height: 60vh; 
     border-radius: 6px; 
+    padding-right: 4px; /* mantém scroll ajustado */
   }
 }
 
