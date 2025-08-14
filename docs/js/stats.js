@@ -156,8 +156,8 @@
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
 
-    const sortAreaBtn = document.getElementById("sort-total");
-    const sortGreenBtn = document.getElementById("sort-green");
+    const sortAreaBtn = document.getElementById("sort-area");
+    const sortGreenBtn = document.getElementById("sort-areaverd");
 
     if (!btn || !panel) return;
 
