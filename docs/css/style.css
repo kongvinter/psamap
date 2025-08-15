@@ -7,16 +7,16 @@
       Variáveis globais
       ============================ */
    :root {
-     --bg-1: #f5f5f5;                /* fundo claro */
-     --glow-1: #000000;              /* preto principal */
-     --glow-2: #555555;              /* cinza secundário */
-     --accent: #cccccc;               /* cor dos botões e detalhes */
-     --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente claro */
+     --bg-1: #f5f5f5;                
+     --glow-1: #000000;              
+     --glow-2: #555555;              
+     --accent: #cccccc;               
+     --panel-bg: rgba(255, 255, 255, 0.95);
    
-     --stats-inner-padding: 18px;    /* padding geral do painel */
-     --treemap-wrapper-gap: 18px;    /* espaço entre blocos de treemap */
-     --treemap-padding: 10px;        /* padding interno do wrapper do treemap */
-     --legend-row-height: 26px;      /* altura de linha da legenda */
+     --stats-inner-padding: 18px;    
+     --treemap-wrapper-gap: 18px;    
+     --treemap-padding: 10px;        
+     --legend-row-height: 26px;      
    }
    
    /* ============================
@@ -31,13 +31,8 @@
                  linear-gradient(180deg, var(--bg-1), #e0e0e0 60%);
    }
    
-   h1, h2, h3, h4 {
-     font-weight: 600;
-   }
-   
-   p, li, span, button {
-     font-weight: 400;
-   }
+   h1, h2, h3, h4 { font-weight: 600; }
+   p, li, span, button { font-weight: 400; }
    
    /* ============================
       Mapa
@@ -76,24 +71,29 @@
       ============================ */
    #stats-panel {
      position: fixed;
-     top: 0;
-     left: 0;
+     top: 20px;                  /* pequeno afastamento do topo */
+     left: 40px;                 /* afastado da borda esquerda */
      width: 480px;
      max-width: 80vw;
-     height: 100vh;
+     height: 90vh;               /* altura menor que 100vh */
      background: var(--panel-bg);
      border: 3px solid rgba(200, 200, 200, 0.2);
      color: var(--glow-1);
      padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
-     border-radius: 0 10px 10px 0;
+     border-radius: 0 12px 12px 0;
      box-shadow: 2px 0 40px rgba(0,0,0,0.15), 0 0 30px rgba(100,100,100,0.05);
      backdrop-filter: blur(4px);
      overflow-y: auto;
      scrollbar-width: thin;
      scrollbar-color: #888 #f0f0f0;
      z-index: 1001;
+   
+     display: flex;
+     flex-direction: column;
+     gap: 14px;                 /* espaçamento entre cards */
    }
    
+   /* Scroll personalizado */
    #stats-panel::-webkit-scrollbar { width: 8px; }
    #stats-panel::-webkit-scrollbar-track { background: #f0f0f0; }
    #stats-panel::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
@@ -129,48 +129,51 @@
      font-size: 12px;
    }
    #stats-panel .list-controls button:hover, 
-   #stats-panel button:hover { 
-     transform: translateY(-2px); 
+   #stats-panel button:hover { transform: translateY(-2px); }
+   
+   /* ============================
+      Cards internos (três camadas)
+      ============================ */
+   .stats-card {
+     background: var(--panel-bg);
+     border-radius: 10px;
+     border: 1px solid rgba(200, 200, 200, 0.2);
+     display: flex;
+     flex-direction: column;
+     flex: 1 1 auto;
+   }
+   
+   .stats-card .card-head {
+     font-weight: 600;
+     margin-bottom: 6px;
+     font-size: 14px;
+     color: var(--glow-1);
+     padding: 10px;
+     border-bottom: 1px solid rgba(200, 200, 200, 0.15);
+   }
+   
+   .stats-card .card-body {
+     flex: 1 1 auto;
+     overflow-y: auto;
+     max-height: 250px;
+     padding: 10px;
+   }
+   
+   .stats-card .card-body::-webkit-scrollbar {
+     width: 6px;
+   }
+   .stats-card .card-body::-webkit-scrollbar-thumb {
+     background: #aaa;
+     border-radius: 4px;
    }
    
    /* ============================
-      Canvases e cards internos
+      Canvases internos
       ============================ */
    #stats-panel canvas { 
      background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); 
      border-radius: 6px; 
      width: 100%;
-   }
-   
-   .card {
-     background: var(--panel-bg);
-     border-radius: 8px;
-     border: 1px solid rgba(200, 200, 200, 0.2);
-     display: flex;
-     flex-direction: column;
-     margin-bottom: 12px;
-   }
-   
-   .card-head {
-     padding: 10px;
-     border-bottom: 1px solid rgba(200, 200, 200, 0.15);
-     font-weight: 600;
-   }
-   
-   .card-body {
-     padding: 10px;
-     width: 100%;
-     height: auto;
-     max-height: 300px;
-     overflow-y: auto;
-   }
-   
-   .card-body::-webkit-scrollbar {
-     width: 6px;
-   }
-   .card-body::-webkit-scrollbar-thumb {
-     background: #aaa;
-     border-radius: 4px;
    }
    
    /* ============================
@@ -228,14 +231,35 @@
      font-size: 13px;
      dominant-baseline: hanging;
    }
-   #stats-panel svg .legend-row {
-     pointer-events: auto;
-   }
+   #stats-panel svg .legend-row { pointer-events: auto; }
    
    /* ============================
       Classe para esconder elementos
       ============================ */
    .hidden { display: none !important; }
+   
+   /* ============================
+      Botão lateral de scroll
+      ============================ */
+   #scroll-down-btn {
+     position: fixed;
+     top: 50%;
+     left: 530px;             /* ao lado do painel */
+     transform: translateY(-50%);
+     z-index: 1100;
+     background: var(--accent);
+     color: #fff;
+     border: none;
+     border-radius: 8px;
+     padding: 8px 10px;
+     cursor: pointer;
+     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+     transition: transform 0.15s ease;
+   }
+   #scroll-down-btn:hover {
+     transform: translateY(-50%) translateX(2px);
+     box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+   }
    
    /* ============================
       Responsividade para telas menores
@@ -252,9 +276,7 @@
        padding: var(--treemap-padding);
      }
    
-     #stats-panel svg .legend-row text {
-       font-size: 12px;
-     }
+     #stats-panel svg .legend-row text { font-size: 12px; }
    
      #stats-btn {
        left: 12px;
@@ -270,4 +292,6 @@
        border-radius: 6px;
        padding-right: 4px;
      }
+   
+     #scroll-down-btn { left: calc(100% - 50px); } /* botão lateral responsivo */
    }   

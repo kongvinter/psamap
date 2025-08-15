@@ -197,39 +197,47 @@
 
   window.webmapStats = { updateStats, contributions };
 
-  // ============================
-  // Painel e botões
-  // ============================
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('stats-btn');
     const panel = document.getElementById('stats-panel');
     const closeBtn = document.getElementById('close-panel');
-    const sortAreaBtn = document.getElementById('sort-area');
+    const sortAreaBtn = document.getElementById('sort-total'); // botão correto
     const sortGreenBtn = document.getElementById('sort-green');
 
     if (!btn || !panel) return;
 
+    // habilita rolagem suave dentro do painel
+    panel.style.scrollBehavior = 'smooth';
+
     function openPanel() {
-      panel.classList.remove('hidden');
-      setTimeout(() => window.webmapStats.updateStats(), 50);
+        panel.classList.remove('hidden');
+        // rola suavemente para o topo ao abrir
+        panel.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => window.webmapStats.updateStats(), 50);
     }
+
     function closePanel() {
-      panel.classList.add('hidden');
+        panel.classList.add('hidden');
     }
 
+    // alterna painel ao clicar no botão
     btn.addEventListener('click', () => {
-      panel.classList.contains('hidden') ? openPanel() : closePanel();
-    });
-    if (closeBtn) closeBtn.addEventListener('click', closePanel);
-    document.addEventListener('click', (e) => {
-      if (!panel.contains(e.target) && !btn.contains(e.target)) closePanel();
+        panel.classList.contains('hidden') ? openPanel() : closePanel();
     });
 
+    // botão de fechar
+    if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+    // fecha ao clicar fora do painel
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && !btn.contains(e.target)) closePanel();
+    });
+
+    // ordenação
     if (sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
     if (sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
 
+    // inicia oculto e atualiza após carregar
     panel.classList.add('hidden');
     setTimeout(() => window.webmapStats.updateStats(), 1000);
-  });
-
-})();
+});
