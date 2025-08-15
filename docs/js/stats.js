@@ -151,54 +151,52 @@
     buildChart('chart-areaverd', valuesAreaVerd, labels);
   }
 
-  window.webmapStats = { updateStats, contributions };
+  window.webmapStats = { updateStats, contributions: [] };
 
   document.addEventListener('DOMContentLoaded', function(){
     const btn = document.getElementById("stats-btn");
     const panel = document.getElementById("stats-panel");
     const closeBtn = document.getElementById("close-panel");
-
     const sortAreaBtn = document.getElementById("sort-area");
     const sortGreenBtn = document.getElementById("sort-areaverd");
 
     if (!btn || !panel) return;
 
+    // Abrir painel
     function openPanel() {
       panel.classList.remove('hidden');
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.style.zIndex = '1001';
-      setTimeout(() => window.webmapStats.updateStats(), 50);
+      window.webmapStats.updateStats();
     }
 
+    // Fechar painel
     function closePanel() {
       panel.classList.add('hidden');
-      panel.style.display = 'none';
     }
 
-    btn.addEventListener('click', function () {
-      const computed = getComputedStyle(panel).display;
-      if (computed === 'none') openPanel(); else closePanel();
+    // Toggle botão
+    btn.addEventListener('click', () => {
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        window.webmapStats.updateStats();
+      }
     });
 
+    // Fechar botão X
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+    // Fechar clicando fora
     document.addEventListener('click', (event) => {
-      if (!panel.contains(event.target) && !btn.contains(event.target)) closePanel();
+      if (!panel.contains(event.target) && !btn.contains(event.target)) {
+        closePanel();
+      }
     });
 
-    // Botões de ordenação com teste no console
-    if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => {
-        console.log('Botão Ordenar por Área Total clicado'); // <-- teste
-        window.webmapStats.updateStats('area');
-    });
+    // Ordenação
+    if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
+    if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
 
-    if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => {
-        console.log('Botão Ordenar por Área Verde clicado'); // <-- teste
-        window.webmapStats.updateStats('areaverd');
-    });
-
+    // Inicialmente escondido
     panel.classList.add('hidden');
-    setTimeout(() => window.webmapStats.updateStats(), 1000);
   });
 
 })();
