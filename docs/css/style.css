@@ -1,7 +1,5 @@
 :root{
   --bg-1: #fdf6e3; /* fundo claro */
-  --glow-1: #ff3b3b; /* vermelho principal */
-  --glow-2: #ff6b6b; /* vermelho secundário neon */
   --accent: #f5d6ba; /* cor dos botões e detalhes */
   --panel-bg: rgba(255, 255, 255, 0.85); /* painel branco semi-transparente */
 }
@@ -11,7 +9,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; /* fonte moderna */
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   background: radial-gradient(circle at 20% 10%, rgba(245,214,186,0.1), transparent 10%), linear-gradient(180deg, var(--bg-1), #f0e8d0 60%);
 }
 
@@ -23,24 +21,24 @@ html, body {
   z-index: 0;
 }
 
-/* Botão Estatísticas */
+/* Botão Estatísticas moderno */
 #stats-btn {
   position: absolute;
   top: 150px;
   left: 10px;
   z-index: 1000;
   background: var(--accent);
-  border: 2px solid #cfa16b;
+  border: none;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   color: #111;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.12s ease;
+  transition: background 0.2s ease, transform 0.12s ease;
 }
 #stats-btn:hover {
-  background: #ffddb3;
+  background: #e6d6b8;
   transform: translateY(-2px);
 }
 
@@ -51,9 +49,9 @@ html, body {
   top: 160px;
   left: 10px;
   font-family: 'Inter', 'Helvetica Neue', sans-serif;
-  background: rgba(255, 255, 255, 0.85); /* fundo branco semi-transparente */
+  background: var(--panel-bg); /* branco semi-transparente */
   color: #111; /* texto preto */
-  padding: 24px; /* espaçamento maior */
+  padding: 24px;
   max-width: 520px;
   width: 360px;
   max-height: 70vh; /* altura máxima para scroll */
@@ -63,11 +61,12 @@ html, body {
   backdrop-filter: blur(6px); /* efeito embacado */
 }
 
-/* Cabeçalhos e parágrafos */
+/* Cabeçalhos e textos */
 #stats-panel h2, #stats-panel h4 {
   color: #111;
   font-size: 16px;
   margin: 0 0 12px 0;
+  font-weight: 600;
 }
 #stats-panel p, #stats-panel li {
   color: #111;
@@ -102,17 +101,16 @@ html, body {
   background: rgba(255,255,255,0.1);
 }
 
-/* Canvas */
+/* Canvas interno */
 #stats-panel canvas { 
-  background: linear-gradient(180deg, rgba(245,214,186,0.02), rgba(245,214,186,0.01)); 
-  border-radius:6px; 
+  background: transparent;
+  border-radius: 6px;
 }
 
 /* Responsividade */
 @media (max-width:900px){
-  .charts{ flex-direction:column; }
   #stats-btn{ left:12px; top:6vh; padding:10px 12px; }
-  #stats-panel{ left:8px; width: calc(100% - 16px); top: 60px; max-height: 60vh; border-radius:6px; }
+  #stats-panel{ left:8px; width: calc(100% - 16px); top: 60px; max-height: 60vh; border-radius:8px; }
 }
 
 /* Classe utilitária */
