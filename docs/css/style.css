@@ -1,22 +1,44 @@
+//* ============================
+   Import da fonte moderna
+   ============================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
   --bg-1: #f5f5f5; /* fundo claro */
   --glow-1: #000000; /* preto principal */
   --glow-2: #555555; /* cinza secundário */
   --accent: #cccccc; /* cor dos botões e detalhes */
   --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente claro */
+
+  --stats-inner-padding: 18px;    /* padding geral do painel */
+  --treemap-wrapper-gap: 18px;    /* espaço entre blocos de treemap */
+  --treemap-padding: 10px;        /* padding interno do wrapper do treemap */
+  --legend-row-height: 26px;      /* altura de linha da legenda */
 }
 
-/* Regras globais */
+/* ============================
+   Regras globais
+   ============================ */
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Press Start 2P', monospace;
+  font-family: 'Inter', sans-serif;
   background: radial-gradient(circle at 20% 10%, rgba(200,200,200,0.1), transparent 10%), 
               linear-gradient(180deg, var(--bg-1), #e0e0e0 60%);
 }
 
-/* Mapa */
+h1, h2, h3, h4 {
+  font-weight: 600;
+}
+
+p, li, span, button {
+  font-weight: 400;
+}
+
+/* ============================
+   Mapa
+   ============================ */
 #map {
   height: 100vh;
   width: 100%;
@@ -24,7 +46,9 @@ html, body {
   z-index: 0;
 }
 
-/* Botão Estatísticas */
+/* ============================
+   Botão Estatísticas
+   ============================ */
 #stats-btn {
   position: absolute;
   top: 150px;
@@ -34,8 +58,7 @@ html, body {
   border: 2px solid #888888;
   border-radius: 8px;
   padding: 8px 12px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--glow-1);
   cursor: pointer;
   transition: background 0.3s ease, transform 0.12s ease;
@@ -45,93 +68,172 @@ html, body {
   transform: translateY(-2px);
 }
 
-/* Painel lateral ajustado */
+/* ============================
+   Painel lateral ajustado
+   ============================ */
 #stats-panel {
   position: absolute;
   z-index: 1001;
-  top: 120px; /* leve ajuste para mais espaço no topo */
+  top: 120px;
   left: 10px;
-  font-family: 'Press Start 2P', monospace;
   background: var(--panel-bg);
   border: 3px solid rgba(200, 200, 200, 0.2);
   color: var(--glow-1);
-  padding: 18px 6px 18px 18px; /* direita um pouco mais larga para scroll */
-  width: 480px; /* Aumentei a largura */
-  max-width: 80vw; /* responsivo para telas menores */
+  padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
+  width: 480px;
+  max-width: 80vw;
   border-radius: 10px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.15), 
               0 0 30px rgba(100,100,100,0.05);
   backdrop-filter: blur(4px);
-
-  /* Scroll interno */
-  max-height: 80vh; /* aumenta a altura relativa */
+  max-height: 80vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #888 #f0f0f0;
 }
 
+/* Scroll */
+#stats-panel::-webkit-scrollbar { width: 8px; }
+#stats-panel::-webkit-scrollbar-track { background: #f0f0f0; }
+#stats-panel::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
+#stats-panel::-webkit-scrollbar-thumb:hover { background-color: #555; }
 
-/* Scroll personalização */
-#stats-panel::-webkit-scrollbar {
-  width: 8px;
-}
-#stats-panel::-webkit-scrollbar-track {
-  background: #f0f0f0;
-}
-#stats-panel::-webkit-scrollbar-thumb {
-  background-color: #888;
-  border-radius: 4px;
-}
-#stats-panel::-webkit-scrollbar-thumb:hover {
-  background-color: #555;
-}
+#stats-panel > *:first-child { margin-top: 0; }
 
-/* Ajustes visuais do conteúdo interno */
-#stats-panel > *:first-child {
-  margin-top: 0; /* evita deslocamento do topo para scroll */
-}
-
-/* Títulos e textos */
+/* ============================
+   Títulos e textos
+   ============================ */
 #stats-panel h2, #stats-panel h4 { 
   color: var(--glow-1); 
-  font-size: 12px; 
+  font-size: 14px; 
   margin: 0 0 8px 0; 
 }
 #stats-panel p, #stats-panel li { 
   color: var(--glow-2); 
-  font-size: 10px; 
+  font-size: 12px; 
   line-height: 1.4; 
 }
 
-/* Botões internos do painel */
-#stats-panel .list-controls button, #stats-panel button {
+/* ============================
+   Botões internos
+   ============================ */
+#stats-panel .list-controls button, 
+#stats-panel button {
   background: transparent;
   border: 1px solid rgba(200, 200, 200, 0.2);
   color: var(--glow-1);
   padding: 6px 8px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 12px;
 }
-#stats-panel .list-controls button:hover, #stats-panel button:hover { 
+#stats-panel .list-controls button:hover, 
+#stats-panel button:hover { 
   transform: translateY(-2px); 
 }
 
-/* Canvases internos */
+/* ============================
+   Canvases internos
+   ============================ */
 #stats-panel canvas { 
   background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); 
   border-radius: 6px; 
 }
 .side-panel { width: 360px; }
 
-/* Classe utilitária para ocultar elementos */
 .hidden { display: none !important; }
 
-/* Toque retro nos canvases */
-canvas { image-rendering: pixelated; }
+/* ============================
+   Layout estilo dashboard
+   ============================ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-gap: 12px;
+}
 
-/* Responsividade */
+.metric-card {
+  background: var(--panel-bg);
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(200, 200, 200, 0.2);
+}
+.metric-title {
+  font-size: 12px;
+  color: var(--glow-2);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--glow-1);
+}
+
+.card {
+  background: var(--panel-bg);
+  border-radius: 8px;
+  border: 1px solid rgba(200, 200, 200, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+.card-head {
+  padding: 10px;
+  border-bottom: 1px solid rgba(200, 200, 200, 0.15);
+  font-weight: 600;
+}
+.card-body {
+  padding: 10px;
+}
+
+.scroll-card .card-body {
+  max-height: 180px;
+  overflow-y: auto;
+}
+.scroll-card .card-body::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-card .card-body::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border-radius: 4px;
+}
+
+/* ============================
+   Treemap e legendas
+   ============================ */
+.d3-treemap-wrapper {
+  box-sizing: border-box;
+  padding: var(--treemap-padding);
+  margin-bottom: var(--treemap-wrapper-gap);
+  background: transparent;
+  width: 100%;
+}
+#stats-panel .d3-treemap-wrapper svg,
+#stats-panel > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+#stats-panel svg .legend-row text {
+  font-size: 13px;
+  dominant-baseline: hanging;
+}
+#stats-panel svg .legend-row {
+  pointer-events: auto;
+}
+
+/* ============================
+   Responsividade
+   ============================ */
 @media (max-width:900px){
-  .charts { flex-direction: column; }
+  :root{
+    --treemap-wrapper-gap: 12px;
+    --treemap-padding: 8px;
+    --legend-row-height: 22px;
+  }
+  .d3-treemap-wrapper { margin-bottom: var(--treemap-wrapper-gap); padding: var(--treemap-padding); }
+  #stats-panel svg .legend-row text { font-size: 12px; }
   #stats-btn { left: 12px; top: 6vh; padding: 10px 12px; }
   #stats-panel { 
     left: 8px; 
@@ -139,83 +241,6 @@ canvas { image-rendering: pixelated; }
     top: 60px; 
     max-height: 60vh; 
     border-radius: 6px; 
-    padding-right: 4px; /* mantém scroll ajustado */
+    padding-right: 4px;
   }
-}
-
-/* Pequenos toques visuais estilo UI JRPG anos 2000 */
-.stats-panel::before {
-  content: '';
-  position: absolute; 
-  left: 10px; 
-  right: 10px; 
-  top: 10px; 
-  height: 3px; 
-  background: linear-gradient(90deg, var(--glow-1), var(--glow-2)); 
-  opacity: 0.08; 
-  border-radius: 2px;
-}
-
-/* ---------------------------------------------------------
-   Bloco adicionado: espaçamento entre treemap e legenda
-   --------------------------------------------------------- */
-
-/* Variáveis locais para ajuste fino (podem ser alteradas)
-   Mantêm coerência entre CSS e a lógica JS já aplicada. */
-:root{
-  --stats-inner-padding: 18px;    /* padding geral do painel (pode aumentar) */
-  --treemap-wrapper-gap: 18px;    /* espaço entre blocos de treemap */
-  --treemap-padding: 10px;        /* padding interno do wrapper do treemap */
-  --legend-row-height: 26px;      /* altura de linha da legenda (complementar ao JS) */
-}
-
-/* Wrapper criado pelo JS ao substituir <canvas> por <div> */
-.d3-treemap-wrapper {
-  box-sizing: border-box;
-  padding: var(--treemap-padding);     /* cria espaçamento interno ao redor do SVG */
-  margin-bottom: var(--treemap-wrapper-gap); /* distância entre treemap e próximo elemento */
-  background: transparent;
-  width: 100%;
-}
-
-/* Forçar o SVG a ocupar toda a largura do wrapper e centralizar */
-#stats-panel .d3-treemap-wrapper svg,
-#stats-panel > svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-/* Aumentar legibilidade dos textos da legenda dentro do SVG.
-   O JS continua a posicionar as linhas; isto apenas melhora renderização. */
-#stats-panel svg .legend-row text {
-  font-size: 13px;        /* ligeiro aumento do tamanho do texto */
-  dominant-baseline: hanging; /* melhor alinhamento vertical para textos pequenos */
-}
-
-/* Espaçamento vertical das linhas da legenda (complementa o rowHeight definido no JS) */
-#stats-panel svg .legend-row {
-  pointer-events: auto;
-}
-
-/* Aumentar padding do painel para reduzir sensação de conteúdo 'grudado' nas bordas */
-#stats-panel {
-  padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
-}
-
-/* Gutter genérico entre colunas de legenda (se houver múltiplas colunas) */
-#stats-panel svg g[transform] { 
-  isolation: isolate;
-}
-
-/* Responsividade: reduzir gaps em telas pequenas sem comprometer legibilidade */
-@media (max-width:900px){
-  :root{
-    --treemap-wrapper-gap: 12px;
-    --treemap-padding: 8px;
-    --legend-row-height: 22px;
-  }
-
-  .d3-treemap-wrapper { margin-bottom: var(--treemap-wrapper-gap); padding: var(--treemap-padding); }
-  #stats-panel svg .legend-row text { font-size: 12px; }
 }
