@@ -211,7 +211,6 @@
 
     function openPanel() {
         panel.classList.remove('hidden');
-        // rola suavemente para o topo ao abrir
         panel.scrollTo({ top: 0, behavior: 'smooth' });
         setTimeout(() => window.webmapStats.updateStats(), 50);
     }
@@ -220,20 +219,16 @@
         panel.classList.add('hidden');
     }
 
-    // alterna painel ao clicar no botão
     btn.addEventListener('click', () => {
         panel.classList.contains('hidden') ? openPanel() : closePanel();
     });
 
-    // botão de fechar
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
 
-    // fecha ao clicar fora do painel
     document.addEventListener('click', (e) => {
         if (!panel.contains(e.target) && !btn.contains(e.target)) closePanel();
     });
 
-    // ordenação
     if (sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
     if (sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
 
