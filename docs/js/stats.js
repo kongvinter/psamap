@@ -122,22 +122,45 @@
       const el = document.getElementById(canvasId);
       if (!el) return;
       const ctx = el.getContext('2d');
-
+    
       if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea = null; }
       if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd = null; }
-
+    
+      const dataTreemap = labels.map((label, i) => ({
+        x: label,
+        v: values[i]
+      }));
+    
       const cfg = {
-        type: 'pie',
-        data: { labels, datasets: [{ data: values, borderWidth: 1, backgroundColor: [
-          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-          '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-          '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38',
-          '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
-          '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
-        ]}] },
-        options: { plugins: { legend: { position: 'bottom' } } }
+        type: 'treemap',
+        data: {
+          datasets: [{
+            tree: dataTreemap,
+            key: 'v',
+            groups: ['x'],
+            backgroundColor: [
+              '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+              '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+              '#EE5A6F', '#0ABDE3', '#10AC84', '#F79F1F', '#A3CB38'
+            ],
+            labels: {
+              display: true,
+              formatter: ctx => `${ctx.dataset.data[ctx.dataIndex].x}\n${ctx.dataset.data[ctx.dataIndex].v}`
+            }
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.raw.x}: ${ctx.raw.v.toLocaleString('pt-BR')}`
+              }
+            }
+          }
+        }
       };
-
+    
       const chart = new Chart(ctx, cfg);
       if (canvasId === 'chart-area') chartArea = chart;
       if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
