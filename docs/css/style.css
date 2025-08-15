@@ -45,7 +45,7 @@ html, body {
 }
 
 /* Painel lateral */
-#stats-panel{
+#stats-panel {
   position: absolute;
   z-index: 1001;
   top: 160px;
@@ -57,10 +57,13 @@ html, body {
   padding: 18px;
   max-width: 520px;
   width: 360px;
+  max-height: 70vh;      /* limite de altura do painel */
+  overflow-y: auto;      /* habilita barra de rolagem vertical */
   border-radius: 10px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(255,107,107,0.05);
   backdrop-filter: blur(4px);
 }
+
 #stats-panel h2, #stats-panel h4 { color: var(--glow-1); font-size:12px; margin:0 0 8px 0; }
 #stats-panel p, #stats-panel li { color: #ff3b3b; font-size:10px; line-height:1.4; }
 #stats-panel .list-controls button, #stats-panel button {
