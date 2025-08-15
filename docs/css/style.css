@@ -71,11 +71,11 @@
       ============================ */
    #stats-panel {
      position: fixed;
-     top: 20px;                  /* pequeno afastamento do topo */
-     left: 40px;                 /* afastado da borda esquerda */
+     top: 20px;
+     left: 40px;
      width: 480px;
      max-width: 80vw;
-     height: 90vh;               /* altura menor que 100vh */
+     height: 90vh;
      background: var(--panel-bg);
      border: 3px solid rgba(200, 200, 200, 0.2);
      color: var(--glow-1);
@@ -86,11 +86,11 @@
      overflow-y: auto;
      scrollbar-width: thin;
      scrollbar-color: #888 #f0f0f0;
-     z-index: 1001;
    
      display: flex;
      flex-direction: column;
-     gap: 14px;                 /* espaçamento entre cards */
+     gap: 14px;
+     z-index: 1001;
    }
    
    /* Scroll personalizado */
@@ -239,12 +239,19 @@
    .hidden { display: none !important; }
    
    /* ============================
+      Ocultar painel de estatísticas
+      ============================ */
+   #stats-panel.hidden {
+     display: none !important;
+   }
+   
+   /* ============================
       Botão lateral de scroll
       ============================ */
    #scroll-down-btn {
      position: fixed;
      top: 50%;
-     left: 530px;             /* ao lado do painel */
+     left: 530px;
      transform: translateY(-50%);
      z-index: 1100;
      background: var(--accent);
@@ -293,5 +300,5 @@
        padding-right: 4px;
      }
    
-     #scroll-down-btn { left: calc(100% - 50px); } /* botão lateral responsivo */
+     #scroll-down-btn { left: calc(100% - 50px); }
    }   
