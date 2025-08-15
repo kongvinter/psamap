@@ -1,4 +1,4 @@
-/// js/stats.js — painel de estatísticas com destaque de camadas únicas
+// js/stats.js — painel de estatísticas com destaque de camadas únicas
 (function(){
 
   function parseNumber(v){
@@ -138,6 +138,9 @@
         const wrapper = document.createElement('div');
         wrapper.id = canvasId;
         wrapper.className = 'd3-treemap-wrapper';
+        // pequenas margens/paddings para separar visualmente do restante do painel
+        wrapper.style.padding = '6px';
+        wrapper.style.marginBottom = '12px';
         el.parentNode.replaceChild(wrapper, el);
         el = wrapper;
       }
@@ -180,19 +183,20 @@
       // dimensões responsivas (usa clientWidth/clientHeight do elemento)
       const style = getComputedStyle(el);
       const width = Math.max(300, Math.floor(el.clientWidth || parseInt(style.width) || 400)); // maior largura por padrão
-      const height = Math.max(240, Math.floor(el.clientHeight || parseInt(style.height) || 320));
+      const height = Math.max(280, Math.floor(el.clientHeight || parseInt(style.height) || 360));
 
-      // layout: reduzir altura da legenda para aumentar treemap (legendHeight proporcional menor)
-      const padding = 8;
-      const legendHeight = Math.max(56, Math.floor(height * 0.16)); // menor do que antes para deixar treemap maior
-      const availableHeightForTreemap = height - padding*2 - legendHeight;
+      // espaçamentos ajustáveis para aumentar distância entre treemap e legenda
+      const padding = 12; // espaço interno ao redor do SVG
+      const legendGap = Math.max(12, Math.floor(height * 0.04)); // gap maior entre treemap e legenda
+      const legendHeight = Math.max(72, Math.floor(height * 0.18)); // altura disponível para legenda
+      const availableHeightForTreemap = height - padding*2 - legendHeight - legendGap;
       const treemapSize = Math.min(width - padding*2, availableHeightForTreemap);
       const treemapLeft = Math.round((width - treemapSize) / 2);
 
       // criar SVG
       const svg = d3.select(el).append('svg').attr('width', width).attr('height', height).style('display','block');
       const gTreemap = svg.append('g').attr('transform', `translate(${treemapLeft}, ${padding})`);
-      const gLegend = svg.append('g').attr('transform', `translate(${padding}, ${padding + treemapSize + 8})`);
+      const gLegend = svg.append('g').attr('transform', `translate(${padding}, ${padding + treemapSize + legendGap})`);
 
       // preparar dados base
       const vals = values.map(v => (isFinite(v) ? Number(v) : 0));
@@ -309,8 +313,8 @@
       const maxCols = Math.min(3, Math.max(1, Math.floor(width / 200)));
       const cols = maxCols;
       const itemsPerCol = Math.ceil(legendAll.length / cols);
-      const rowHeight = 20;
-      const colWidth = Math.floor((width - padding*2) / cols);
+      const rowHeight = 24; // aumentado para dar mais espaço vertical entre itens
+      const colWidth = Math.floor((width - padding*2 - (cols - 1) * 12) / cols);
 
       // limpar grupo de legenda
       gLegend.selectAll('*').remove();
@@ -464,3 +468,4 @@
   });
 
 })();
+

@@ -155,3 +155,67 @@ canvas { image-rendering: pixelated; }
   opacity: 0.08; 
   border-radius: 2px;
 }
+
+/* ---------------------------------------------------------
+   Bloco adicionado: espaçamento entre treemap e legenda
+   --------------------------------------------------------- */
+
+/* Variáveis locais para ajuste fino (podem ser alteradas)
+   Mantêm coerência entre CSS e a lógica JS já aplicada. */
+:root{
+  --stats-inner-padding: 18px;    /* padding geral do painel (pode aumentar) */
+  --treemap-wrapper-gap: 18px;    /* espaço entre blocos de treemap */
+  --treemap-padding: 10px;        /* padding interno do wrapper do treemap */
+  --legend-row-height: 26px;      /* altura de linha da legenda (complementar ao JS) */
+}
+
+/* Wrapper criado pelo JS ao substituir <canvas> por <div> */
+.d3-treemap-wrapper {
+  box-sizing: border-box;
+  padding: var(--treemap-padding);     /* cria espaçamento interno ao redor do SVG */
+  margin-bottom: var(--treemap-wrapper-gap); /* distância entre treemap e próximo elemento */
+  background: transparent;
+  width: 100%;
+}
+
+/* Forçar o SVG a ocupar toda a largura do wrapper e centralizar */
+#stats-panel .d3-treemap-wrapper svg,
+#stats-panel > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Aumentar legibilidade dos textos da legenda dentro do SVG.
+   O JS continua a posicionar as linhas; isto apenas melhora renderização. */
+#stats-panel svg .legend-row text {
+  font-size: 13px;        /* ligeiro aumento do tamanho do texto */
+  dominant-baseline: hanging; /* melhor alinhamento vertical para textos pequenos */
+}
+
+/* Espaçamento vertical das linhas da legenda (complementa o rowHeight definido no JS) */
+#stats-panel svg .legend-row {
+  pointer-events: auto;
+}
+
+/* Aumentar padding do painel para reduzir sensação de conteúdo 'grudado' nas bordas */
+#stats-panel {
+  padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
+}
+
+/* Gutter genérico entre colunas de legenda (se houver múltiplas colunas) */
+#stats-panel svg g[transform] { 
+  isolation: isolate;
+}
+
+/* Responsividade: reduzir gaps em telas pequenas sem comprometer legibilidade */
+@media (max-width:900px){
+  :root{
+    --treemap-wrapper-gap: 12px;
+    --treemap-padding: 8px;
+    --legend-row-height: 22px;
+  }
+
+  .d3-treemap-wrapper { margin-bottom: var(--treemap-wrapper-gap); padding: var(--treemap-padding); }
+  #stats-panel svg .legend-row text { font-size: 12px; }
+}
