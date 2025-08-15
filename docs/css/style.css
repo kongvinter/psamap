@@ -71,33 +71,33 @@ p, li, span, button {
 /* ============================
    Painel lateral ajustado
    ============================ */
-#stats-panel {
-  position: absolute;
-  z-index: 1001;
-  top: 120px;
-  left: 10px;
-  background: var(--panel-bg);
-  border: 3px solid rgba(200, 200, 200, 0.2);
-  color: var(--glow-1);
-  padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
-  width: 480px;
-  max-width: 80vw;
-  border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 
-              0 0 30px rgba(100,100,100,0.05);
-  backdrop-filter: blur(4px);
-  max-height: 80vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #888 #f0f0f0;
-}
-
-/* Scroll */
-#stats-panel::-webkit-scrollbar { width: 8px; }
-#stats-panel::-webkit-scrollbar-track { background: #f0f0f0; }
-#stats-panel::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
-#stats-panel::-webkit-scrollbar-thumb:hover { background-color: #555; }
-
+   #stats-panel {
+    position: fixed;                 /* fixo na lateral da tela */
+    top: 0;                          /* começa do topo */
+    left: 0;                         /* encostado na esquerda */
+    width: 480px;                     /* largura do painel (ajustável) */
+    max-width: 80vw;                  /* não ultrapassar 80% da tela */
+    height: 100vh;                    /* ocupa toda a altura da tela */
+    background: var(--panel-bg);      /* fundo semi-transparente */
+    border: 3px solid rgba(200, 200, 200, 0.2);
+    color: var(--glow-1);
+    padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
+    border-radius: 0 10px 10px 0;    /* borda arredondada só na lateral direita */
+    box-shadow: 2px 0 40px rgba(0,0,0,0.15), 
+                0 0 30px rgba(100,100,100,0.05);
+    backdrop-filter: blur(4px);
+    overflow-y: auto;                 /* barra de rolagem vertical */
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f0f0f0;
+    z-index: 1001;
+  }
+  
+  /* Scroll personalizado para webkit */
+  #stats-panel::-webkit-scrollbar { width: 8px; }
+  #stats-panel::-webkit-scrollbar-track { background: #f0f0f0; }
+  #stats-panel::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
+  #stats-panel::-webkit-scrollbar-thumb:hover { background-color: #555; }
+  
 #stats-panel > *:first-child { margin-top: 0; }
 
 /* ============================
@@ -202,45 +202,130 @@ p, li, span, button {
 /* ============================
    Treemap e legendas
    ============================ */
-.d3-treemap-wrapper {
-  box-sizing: border-box;
-  padding: var(--treemap-padding);
-  margin-bottom: var(--treemap-wrapper-gap);
-  background: transparent;
-  width: 100%;
-}
-#stats-panel .d3-treemap-wrapper svg,
-#stats-panel > svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-#stats-panel svg .legend-row text {
-  font-size: 13px;
-  dominant-baseline: hanging;
-}
-#stats-panel svg .legend-row {
-  pointer-events: auto;
-}
-
-/* ============================
-   Responsividade
-   ============================ */
-@media (max-width:900px){
-  :root{
-    --treemap-wrapper-gap: 12px;
-    --treemap-padding: 8px;
-    --legend-row-height: 22px;
+   .d3-treemap-wrapper {
+    box-sizing: border-box;
+    padding: var(--treemap-padding);          /* padding interno */
+    margin-bottom: var(--treemap-wrapper-gap); /* espaço entre treemaps */
+    background: transparent;
+    width: 100%;                              /* ocupa toda a largura do painel */
   }
-  .d3-treemap-wrapper { margin-bottom: var(--treemap-wrapper-gap); padding: var(--treemap-padding); }
-  #stats-panel svg .legend-row text { font-size: 12px; }
-  #stats-btn { left: 12px; top: 6vh; padding: 10px 12px; }
-  #stats-panel { 
-    left: 8px; 
-    width: calc(100% - 16px); 
-    top: 60px; 
-    max-height: 60vh; 
-    border-radius: 6px; 
-    padding-right: 4px;
+  
+  #stats-panel .d3-treemap-wrapper svg,
+  #stats-panel > svg {
+    display: block;
+    width: 100%;           /* responsivo à largura do painel */
+    height: 300px;         /* altura padrão, pode ajustar individualmente */
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01));
   }
-}
+  
+  /* Legenda dentro do SVG */
+  #stats-panel svg .legend-row text {
+    font-size: 13px;
+    dominant-baseline: hanging;
+  }
+  
+  #stats-panel svg .legend-row {
+    pointer-events: auto;
+  }
+  
+  /* ============================
+     Cards de métricas e gráficos
+     ============================ */
+  .card {
+    background: var(--panel-bg);
+    border-radius: 8px;
+    border: 1px solid rgba(200, 200, 200, 0.2);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+  }
+  
+  .card-head {
+    padding: 10px;
+    border-bottom: 1px solid rgba(200, 200, 200, 0.15);
+    font-weight: 600;
+  }
+  
+  .card-body {
+    padding: 10px;
+    width: 100%;
+    height: auto;
+    max-height: 300px; /* altura máxima para rolagem interna */
+    overflow-y: auto;
+  }
+  
+  .card-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .card-body::-webkit-scrollbar-thumb {
+    background: #aaa;
+    border-radius: 4px;
+  }
+  
+  /* ============================
+     Layout de dashboard (grid)
+     ============================ */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-gap: 12px;
+  }
+  
+  /* Cards de métricas */
+  .metric-card {
+    background: var(--panel-bg);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid rgba(200, 200, 200, 0.2);
+  }
+  
+  .metric-title {
+    font-size: 12px;
+    color: var(--glow-2);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  
+  .metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--glow-1);
+  }
+  
+  /* ============================
+     Responsividade para telas menores
+     ============================ */
+  @media (max-width: 900px) {
+    :root {
+      --treemap-wrapper-gap: 12px;
+      --treemap-padding: 8px;
+      --legend-row-height: 22px;
+    }
+  
+    .d3-treemap-wrapper {
+      margin-bottom: var(--treemap-wrapper-gap);
+      padding: var(--treemap-padding);
+    }
+  
+    #stats-panel svg .legend-row text {
+      font-size: 12px;
+    }
+  
+    #stats-btn {
+      left: 12px;
+      top: 6vh;
+      padding: 10px 12px;
+    }
+  
+    #stats-panel {
+      left: 8px;
+      width: calc(100% - 16px);
+      top: 60px;
+      max-height: 60vh;
+      border-radius: 6px;
+      padding-right: 4px;
+    }
+  }
+  
