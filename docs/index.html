@@ -44,72 +44,46 @@ Importante: mantenha as pastas css/, js/ e data/ conforme a sua estrutura atual 
         <div id="map"></div>
 
         <!-- Painel lateral JRPG (escuro, integrado) -->
-        <!-- Painel lateral adaptado para dashboard -->
-        <!-- Painel lateral JRPG/Dashboard -->
-<!-- Botão Estatísticas (posição ajustada à esquerda) -->
-<button id="stats-btn">Estatísticas</button>
+        <div id="stats-panel" class="hidden stats-panel side-panel">
+          <div class="stats-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h2>Estatísticas</h2>
+            <button id="close-panel">Fechar</button>
+          </div>
 
-<!-- Mapa -->
-<div id="map"></div>
+          <div class="stats-content">
+            <p><strong>Propriedades aderidas:</strong> <span id="total-props">0</span></p>
+            <p><strong>Área total:</strong> <span id="total-area">0</span> ha</p>
+            <p><strong>Área verde total:</strong> <span id="total-green">0</span> ha</p>
 
-<!-- Painel lateral JRPG/Dashboard -->
-<div id="stats-panel" class="hidden stats-panel side-panel">
-    <div class="stats-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <h2>Estatísticas</h2>
-      <button id="close-panel">Fechar</button>
-    </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+              <div style="flex:1 1 240px;">
+                <h4>Contribuição por Área</h4>
+                <canvas id="chart-area" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+              </div>
+              <div style="flex:1 1 240px;">
+                <h4>Contribuição por Área Verde</h4>
+                <canvas id="chart-areaverd" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+              </div>
+            </div>
 
-    <!-- Painel interno com scroll geral -->
-    <div class="stats-content" style="overflow-y:auto; max-height:calc(100vh - 50px); padding-right:10px;">
-      
-      <!-- Lista de propriedades (primeira camada) -->
-      <div class="card large scroll-card">
-        <div class="card-head">
-          <h4>Lista de propriedades</h4>
-          <div class="list-controls">
-            <button id="sort-green">Ordenar por Área Verde</button>
-            <button id="sort-total">Ordenar por Área Total</button>
+            <div class="list-controls" style="margin-top:10px;">
+             <button id="sort-green" style="margin-right:6px;">Ordenar por Área Verde</button>
+             <button id="sort-total">Ordenar por Área Total</button>
+            </div>
+
+            <ul id="props-list" style="margin-top:10px; padding-left:18px;"></ul>
+
+            <!-- Elementos de compatibilidade (legado) -->
+            <div style="margin-top:10px; font-size:12px; opacity:0.9;">
+              <p id="layer-count">Camadas no grupo: —</p>
+              <p id="area-total">Total Área: —</p>
+              <p id="areaverd-total">Total Área Verd: —</p>
+            </div>
+
           </div>
         </div>
-        <div class="card-body">
-          <ul id="props-list"></ul>
-        </div>
-      </div>
 
-      <!-- Gráfico Contribuição por Área (segunda camada) -->
-      <div class="card large">
-        <div class="card-head"><h4>Contribuição por Área</h4></div>
-        <div class="card-body">
-          <canvas id="chart-area"></canvas>
-        </div>
-      </div>
 
-      <!-- Gráfico Contribuição por Área Verde (terceira camada) -->
-      <div class="card large">
-        <div class="card-head"><h4>Contribuição por Área Verde</h4></div>
-        <div class="card-body">
-          <canvas id="chart-areaverd"></canvas>
-        </div>
-      </div>
-
-      <!-- Métricas principais (opcional: podem ficar abaixo ou acima dos gráficos) -->
-      <div class="dashboard-grid" style="margin-top:12px;">
-        <div class="metric-card">
-          <div class="metric-title">Propriedades aderidas</div>
-          <div class="metric-value" id="total-props">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-title">Área total</div>
-          <div class="metric-value" id="total-area">0 ha</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-title">Área verde total</div>
-          <div class="metric-value" id="total-green">0 ha</div>
-        </div>
-      </div>
-
-    </div>
-</div>
         <!-- SCRIPTS qgis2web -->
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
@@ -209,8 +183,9 @@ Importante: mantenha as pastas css/, js/ e data/ conforme a sua estrutura atual 
         }
         </script>
 
-        <!-- d3js.js (biblioteca) -->
-        <script src="https://d3js.org/d3.v7.min.js"></script>        
+        <!-- Chart.js (biblioteca) -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
         <!-- script de estatísticas (versão adaptada) -->
         <script src="js/stats.js"></script>
 

@@ -1,304 +1,97 @@
-/* ============================
-   Import da fonte moderna
-   ============================ */
-   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --bg-1: #fdf6e3; /* fundo claro */
+  --glow-1: #ff3b3b; /* vermelho principal */
+  --glow-2: #ff6b6b; /* vermelho secundário neon */
+  --accent: #f5d6ba; /* cor dos botões e detalhes */
+  --panel-bg: rgba(255, 255, 255, 0.95); /* painel semi-transparente claro */
+}
 
-   /* ============================
-      Variáveis globais
-      ============================ */
-   :root {
-     --bg-1: #f5f5f5;                
-     --glow-1: #000000;              
-     --glow-2: #555555;              
-     --accent: #cccccc;               
-     --panel-bg: rgba(255, 255, 255, 0.95);
-   
-     --stats-inner-padding: 18px;    
-     --treemap-wrapper-gap: 18px;    
-     --treemap-padding: 10px;        
-     --legend-row-height: 26px;      
-   }
-   
-   /* ============================
-      Regras globais
-      ============================ */
-   html, body {
-     height: 100%;
-     margin: 0;
-     padding: 0;
-     font-family: 'Inter', sans-serif;
-     background: radial-gradient(circle at 20% 10%, rgba(200,200,200,0.1), transparent 10%), 
-                 linear-gradient(180deg, var(--bg-1), #e0e0e0 60%);
-   }
-   
-   h1, h2, h3, h4 { font-weight: 600; }
-   p, li, span, button { font-weight: 400; }
-   
-   /* ============================
-      Mapa
-      ============================ */
-   #map {
-     height: 100vh;
-     width: 100%;
-     position: relative;
-     z-index: 0;
-   }
-   
-   /* ============================
-      Botão Estatísticas
-      ============================ */
-   #stats-btn {
-     position: absolute;
-     top: 150px;
-     left: 10px;
-     z-index: 1000;
-     background: var(--accent);
-     border: 2px solid #888888;
-     border-radius: 8px;
-     padding: 8px 12px;
-     font-size: 13px;
-     color: var(--glow-1);
-     cursor: pointer;
-     transition: background 0.3s ease, transform 0.12s ease;
-   }
-   #stats-btn:hover {
-     background: #dddddd;
-     transform: translateY(-2px);
-   }
-   
-   /* ============================
-      Painel lateral
-      ============================ */
-   #stats-panel {
-     position: fixed;
-     top: 20px;
-     left: 40px;
-     width: 480px;
-     max-width: 80vw;
-     height: 90vh;
-     background: var(--panel-bg);
-     border: 3px solid rgba(200, 200, 200, 0.2);
-     color: var(--glow-1);
-     padding: calc(var(--stats-inner-padding) + 4px) 10px calc(var(--stats-inner-padding) + 4px) 18px;
-     border-radius: 0 12px 12px 0;
-     box-shadow: 2px 0 40px rgba(0,0,0,0.15), 0 0 30px rgba(100,100,100,0.05);
-     backdrop-filter: blur(4px);
-     overflow-y: auto;
-     scrollbar-width: thin;
-     scrollbar-color: #888 #f0f0f0;
-   
-     display: flex;
-     flex-direction: column;
-     gap: 14px;
-     z-index: 1001;
-   }
-   
-   /* Scroll personalizado */
-   #stats-panel::-webkit-scrollbar { width: 8px; }
-   #stats-panel::-webkit-scrollbar-track { background: #f0f0f0; }
-   #stats-panel::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
-   #stats-panel::-webkit-scrollbar-thumb:hover { background-color: #555; }
-   
-   #stats-panel > *:first-child { margin-top: 0; }
-   
-   /* ============================
-      Títulos e textos
-      ============================ */
-   #stats-panel h2, #stats-panel h4 { 
-     color: var(--glow-1); 
-     font-size: 14px; 
-     margin: 0 0 8px 0; 
-   }
-   #stats-panel p, #stats-panel li { 
-     color: var(--glow-2); 
-     font-size: 12px; 
-     line-height: 1.4; 
-   }
-   
-   /* ============================
-      Botões internos
-      ============================ */
-   #stats-panel .list-controls button, 
-   #stats-panel button {
-     background: transparent;
-     border: 1px solid rgba(200, 200, 200, 0.2);
-     color: var(--glow-1);
-     padding: 6px 8px;
-     border-radius: 6px;
-     cursor: pointer;
-     font-size: 12px;
-   }
-   #stats-panel .list-controls button:hover, 
-   #stats-panel button:hover { transform: translateY(-2px); }
-   
-   /* ============================
-      Cards internos (três camadas)
-      ============================ */
-   .stats-card {
-     background: var(--panel-bg);
-     border-radius: 10px;
-     border: 1px solid rgba(200, 200, 200, 0.2);
-     display: flex;
-     flex-direction: column;
-     flex: 1 1 auto;
-   }
-   
-   .stats-card .card-head {
-     font-weight: 600;
-     margin-bottom: 6px;
-     font-size: 14px;
-     color: var(--glow-1);
-     padding: 10px;
-     border-bottom: 1px solid rgba(200, 200, 200, 0.15);
-   }
-   
-   .stats-card .card-body {
-     flex: 1 1 auto;
-     overflow-y: auto;
-     max-height: 250px;
-     padding: 10px;
-   }
-   
-   .stats-card .card-body::-webkit-scrollbar {
-     width: 6px;
-   }
-   .stats-card .card-body::-webkit-scrollbar-thumb {
-     background: #aaa;
-     border-radius: 4px;
-   }
-   
-   /* ============================
-      Canvases internos
-      ============================ */
-   #stats-panel canvas { 
-     background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01)); 
-     border-radius: 6px; 
-     width: 100%;
-   }
-   
-   /* ============================
-      Dashboard grid
-      ============================ */
-   .dashboard-grid {
-     display: grid;
-     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-     grid-gap: 12px;
-   }
-   
-   .metric-card {
-     background: var(--panel-bg);
-     padding: 12px;
-     border-radius: 8px;
-     text-align: center;
-     border: 1px solid rgba(200, 200, 200, 0.2);
-   }
-   
-   .metric-title {
-     font-size: 12px;
-     color: var(--glow-2);
-     margin-bottom: 6px;
-     font-weight: 500;
-   }
-   
-   .metric-value {
-     font-size: 16px;
-     font-weight: 700;
-     color: var(--glow-1);
-   }
-   
-   /* ============================
-      Treemap D3.js
-      ============================ */
-   .d3-treemap-wrapper {
-     box-sizing: border-box;
-     padding: var(--treemap-padding);
-     margin-bottom: var(--treemap-wrapper-gap);
-     background: transparent;
-     width: 100%;
-   }
-   
-   #stats-panel .d3-treemap-wrapper svg,
-   #stats-panel > svg {
-     display: block;
-     width: 100%;
-     height: 300px;
-     border-radius: 6px;
-     background: linear-gradient(180deg, rgba(200,200,200,0.02), rgba(200,200,200,0.01));
-   }
-   
-   /* Legenda dentro do SVG */
-   #stats-panel svg .legend-row text {
-     font-size: 13px;
-     dominant-baseline: hanging;
-   }
-   #stats-panel svg .legend-row { pointer-events: auto; }
-   
-   /* ============================
-      Classe para esconder elementos
-      ============================ */
-   .hidden { display: none !important; }
-   
-   /* ============================
-      Ocultar painel de estatísticas
-      ============================ */
-   #stats-panel.hidden {
-     display: none !important;
-   }
-   
-   /* ============================
-      Botão lateral de scroll
-      ============================ */
-   #scroll-down-btn {
-     position: fixed;
-     top: 50%;
-     left: 530px;
-     transform: translateY(-50%);
-     z-index: 1100;
-     background: var(--accent);
-     color: #fff;
-     border: none;
-     border-radius: 8px;
-     padding: 8px 10px;
-     cursor: pointer;
-     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-     transition: transform 0.15s ease;
-   }
-   #scroll-down-btn:hover {
-     transform: translateY(-50%) translateX(2px);
-     box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-   }
-   
-   /* ============================
-      Responsividade para telas menores
-      ============================ */
-   @media (max-width: 900px) {
-     :root {
-       --treemap-wrapper-gap: 12px;
-       --treemap-padding: 8px;
-       --legend-row-height: 22px;
-     }
-   
-     .d3-treemap-wrapper {
-       margin-bottom: var(--treemap-wrapper-gap);
-       padding: var(--treemap-padding);
-     }
-   
-     #stats-panel svg .legend-row text { font-size: 12px; }
-   
-     #stats-btn {
-       left: 12px;
-       top: 6vh;
-       padding: 10px 12px;
-     }
-   
-     #stats-panel {
-       left: 8px;
-       width: calc(100% - 16px);
-       top: 60px;
-       max-height: 60vh;
-       border-radius: 6px;
-       padding-right: 4px;
-     }
-   
-     #scroll-down-btn { left: calc(100% - 50px); }
-   }   
+/* Regras globais */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Press Start 2P', monospace;
+  background: radial-gradient(circle at 20% 10%, rgba(245,214,186,0.1), transparent 10%), linear-gradient(180deg, var(--bg-1), #f0e8d0 60%);
+}
+
+/* Mapa */
+#map {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  z-index: 0;
+}
+
+/* Botão Estatísticas */
+#stats-btn {
+  position: absolute;
+  top: 150px;
+  left: 10px;
+  z-index: 1000;
+  background: var(--accent);
+  border: 2px solid #cfa16b;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #ff3b3b;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.12s ease;
+}
+#stats-btn:hover {
+  background: #ffddb3;
+  transform: translateY(-2px);
+}
+
+/* Painel lateral */
+#stats-panel{
+  position: absolute;
+  z-index: 1001;
+  top: 160px;
+  left: 10px;
+  font-family: 'Press Start 2P', monospace;
+  background: var(--panel-bg);
+  border: 3px solid rgba(245,214,186,0.2);
+  color: var(--glow-1);
+  padding: 18px;
+  max-width: 520px;
+  width: 360px;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 30px rgba(255,107,107,0.05);
+  backdrop-filter: blur(4px);
+}
+#stats-panel h2, #stats-panel h4 { color: var(--glow-1); font-size:12px; margin:0 0 8px 0; }
+#stats-panel p, #stats-panel li { color: #ff3b3b; font-size:10px; line-height:1.4; }
+#stats-panel .list-controls button, #stats-panel button {
+  background: transparent;
+  border:1px solid rgba(245,214,186,0.2);
+  color: var(--accent);
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
+}
+#stats-panel .list-controls button:hover, #stats-panel button:hover { transform: translateY(-2px); }
+#stats-panel canvas { background: linear-gradient(180deg, rgba(245,214,186,0.02), rgba(245,214,186,0.01)); border-radius:6px; }
+.side-panel { width: 360px; }
+
+/* classe utilitária para ocultar elementos */
+.hidden { display: none !important; }
+
+/* Toque retro nos canvases */
+canvas{ image-rendering: pixelated; }
+
+/* Responsividade */
+@media (max-width:900px){
+  .charts{ flex-direction:column; }
+  #stats-btn{ left:12px; top:6vh; padding:10px 12px; }
+  #stats-panel{ left:8px; width: calc(100% - 16px); top: 60px; max-height: 60vh; border-radius:6px; }
+}
+
+/* Pequenos toques visuais estilo UI JRPG anos 2000 */
+.stats-panel::before{
+  content: '';
+  position:absolute; left:10px; right:10px; top:10px; height:3px; 
+  background: linear-gradient(90deg, var(--glow-1), var(--glow-2)); 
+  opacity:0.08; border-radius:2px;
+}  
