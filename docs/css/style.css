@@ -1,7 +1,9 @@
 :root{
   --bg-1: #fdf6e3; /* fundo claro */
-  --accent: #f5d6ba; /* cor dos botões e detalhes */
+  --accent: #f5f5f5; /* cor neutra para botões */
   --panel-bg: rgba(255, 255, 255, 0.85); /* painel branco semi-transparente */
+  --text-color: #111; /* texto preto */
+  --btn-hover: #e0e0e0; /* hover do botão */
 }
 
 /* Regras globais */
@@ -21,24 +23,25 @@ html, body {
   z-index: 0;
 }
 
-/* Botão Estatísticas moderno */
+/* Botão Estatísticas moderno e clean */
 #stats-btn {
   position: absolute;
   top: 150px;
   left: 10px;
   z-index: 1000;
   background: var(--accent);
-  border: none;
+  border: 1px solid #ccc;
   border-radius: 8px;
   padding: 10px 14px;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #111;
+  color: var(--text-color);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.12s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 #stats-btn:hover {
-  background: #e6d6b8;
+  background: var(--btn-hover);
   transform: translateY(-2px);
 }
 
@@ -49,8 +52,8 @@ html, body {
   top: 160px;
   left: 10px;
   font-family: 'Inter', 'Helvetica Neue', sans-serif;
-  background: var(--panel-bg); /* branco semi-transparente */
-  color: #111; /* texto preto */
+  background: var(--panel-bg); /* fundo branco semi-transparente */
+  color: var(--text-color); /* texto preto */
   padding: 24px;
   max-width: 520px;
   width: 360px;
@@ -63,29 +66,29 @@ html, body {
 
 /* Cabeçalhos e textos */
 #stats-panel h2, #stats-panel h4 {
-  color: #111;
+  color: var(--text-color);
   font-size: 16px;
   margin: 0 0 12px 0;
   font-weight: 600;
 }
 #stats-panel p, #stats-panel li {
-  color: #111;
+  color: var(--text-color);
   font-size: 14px;
   line-height: 1.6;
 }
 
 /* Botões internos do painel */
 #stats-panel .list-controls button, #stats-panel button {
-  background: #f5f5f5;
+  background: var(--accent);
   border: 1px solid #ccc;
-  color: #111;
+  color: var(--text-color);
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.12s ease;
 }
 #stats-panel .list-controls button:hover, #stats-panel button:hover {
-  background: #e0e0e0;
+  background: var(--btn-hover);
   transform: translateY(-2px);
 }
 
@@ -104,7 +107,7 @@ html, body {
 /* Canvas interno */
 #stats-panel canvas { 
   background: transparent;
-  border-radius: 6px;
+  border-radius: 6px; 
 }
 
 /* Responsividade */
