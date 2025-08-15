@@ -233,6 +233,10 @@
     if (sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
 
     // inicia oculto e atualiza após carregar
-    panel.classList.add('hidden');
-    setTimeout(() => window.webmapStats.updateStats(), 1000);
-});
+    // ... todo o código do painel ...
+      panel.classList.add('hidden');
+      setTimeout(() => window.webmapStats.updateStats(), 1000);
+    }); // fecha DOMContentLoaded
+    
+    })(); // fecha a IIFE principal
+    
