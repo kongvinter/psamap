@@ -35,10 +35,6 @@
   let highlightedLayers = [];
   let contributions = []; // escopo global para usar nos botões
 
-  /* Opções configuráveis globalmente (pode ser alterado em runtime)
-     Ex.: window._treemapOptions = { minPixel: 24 }; */
-  if (!window._treemapOptions) window._treemapOptions = {};
-
   function updateStats(orderBy = null){
     const map = window.map || window._map || null;
     if (!map) return;
@@ -102,9 +98,9 @@
       if (totalAreaEl) totalAreaEl.textContent = '—';
       if (totalGreenEl) totalGreenEl.textContent = '—';
       if (propsListEl) propsListEl.innerHTML = '';
-      // destruir gráficos se existirem
-      try { if (chartArea && chartArea.destroy) { chartArea.destroy(); chartArea = null; } } catch(e){}
-      try { if (chartAreaVerd && chartAreaVerd.destroy) { chartAreaVerd.destroy(); chartAreaVerd = null; } } catch(e){}
+      // destruir gráficos Chart.js se existirem
+      try { if (chartArea) { chartArea.destroy(); chartArea = null; } } catch(e){}
+      try { if (chartAreaVerd) { chartAreaVerd.destroy(); chartAreaVerd = null; } } catch(e){}
       return;
     }
 
@@ -123,8 +119,9 @@
         propsListEl.appendChild(li);
       });
     }
-
-    // ---------- buildChart usando D3.js (treemap responsivo e adaptativo) ----------
+    // ---------- buildChart usando D3.js (treemap maior, legenda compacta e interativa) ----------
+    // Requisitos: d3.v7 incluído no HTML.
+    // Estado compartilhado para seleção e mapa de cores (persiste entre chamadas)
     if (!window._treemapActive) window._treemapActive = new Set();
     if (!window._treemapColorMap) window._treemapColorMap = {};
 
@@ -141,6 +138,9 @@
         const wrapper = document.createElement('div');
         wrapper.id = canvasId;
         wrapper.className = 'd3-treemap-wrapper';
+        // pequenas margens/paddings para separar visualmente do restante do painel
+        wrapper.style.padding = '6px';
+        wrapper.style.marginBottom = '12px';
         el.parentNode.replaceChild(wrapper, el);
         el = wrapper;
       }
@@ -152,19 +152,6 @@
       } catch(e){ /* ignore */ }
 
       el.innerHTML = '';
-
-      // estilo de scrollbar minimal (injetado uma vez)
-      if (!document.getElementById('treemap-legend-scroll-style')){
-        const style = document.createElement('style');
-        style.id = 'treemap-legend-scroll-style';
-        style.innerHTML = `
-          .treemap-legend-container::-webkit-scrollbar{ width:6px; }
-          .treemap-legend-container::-webkit-scrollbar-track{ background: rgba(0,0,0,0.04); border-radius:4px; }
-          .treemap-legend-container::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.18); border-radius:4px; }
-          .treemap-legend-container{ scrollbar-width: thin; }
-        `;
-        document.head.appendChild(style);
-      }
 
       // paleta e utilitários
       const palette = [
@@ -193,57 +180,49 @@
         return String(n);
       }
 
-      // dimensões responsivas
+      // dimensões responsivas (usa clientWidth/clientHeight do elemento)
       const style = getComputedStyle(el);
-      const baseWidth = Math.max(360, Math.floor(el.clientWidth || parseInt(style.width) || 480));
-      let baseHeight = Math.max(300, Math.floor(el.clientHeight || parseInt(style.height) || 380));
+      const width = Math.max(300, Math.floor(el.clientWidth || parseInt(style.width) || 400)); // maior largura por padrão
+      const height = Math.max(280, Math.floor(el.clientHeight || parseInt(style.height) || 360));
 
-      // layout: treemap acima, legenda abaixo com espaçamento
-      const padding = 12;
-      const legendGap = Math.max(12, Math.floor(baseHeight * 0.04));
-
-      // calcular espaço para legenda (duas colunas)
-      const labelsCount = labels.length;
-      const legendCols = 2; // solicitado: duas colunas verticais
-      const itemsPerCol = Math.ceil(labelsCount / legendCols);
-      const rowHeight = Math.max(22, Math.round(baseHeight * 0.032));
-      const legendPadding = 8;
-      const desiredLegendHeight = itemsPerCol * rowHeight + legendPadding;
-
-      // assegurar altura minima do treemap para visualização de áreas pequenas
-      const minTreemapHeight = 220;
-      const neededHeight = padding*2 + minTreemapHeight + legendGap + desiredLegendHeight;
-      const height = Math.max(baseHeight, neededHeight);
-
-      // dar mais largura ao treemap para melhorar visibilidade de áreas pequenas
-      const treemapWidth = Math.floor(baseWidth * 0.96) - padding*2;
-      const treemapHeight = Math.max(minTreemapHeight, Math.floor(height - padding*2 - desiredLegendHeight - legendGap));
+      // espaçamentos ajustáveis para aumentar distância entre treemap e legenda
+      const padding = 12; // espaço interno ao redor do SVG
+      // reduzir a distância entre gráfico e legenda para metade do valor anterior
+      const baseLegendGap = Math.max(12, Math.floor(height * 0.04));
+      const legendGap = Math.max(6, Math.floor(baseLegendGap * 0.5)); // metade do gap anterior
+      const legendHeight = Math.max(72, Math.floor(height * 0.18)); // altura disponível para legenda
+      const availableHeightForTreemap = height - padding*2 - legendHeight - legendGap;
+      const treemapSize = Math.min(width - padding*2, availableHeightForTreemap);
+      const treemapLeft = Math.round((width - treemapSize) / 2);
 
       // criar SVG
-      const svg = d3.select(el).append('svg').attr('width', baseWidth).attr('height', height).style('display','block');
-      const gTreemap = svg.append('g').attr('transform', `translate(${padding}, ${padding})`);
+      const svg = d3.select(el).append('svg').attr('width', width).attr('height', height).style('display','block');
+      const gTreemap = svg.append('g').attr('transform', `translate(${treemapLeft}, ${padding})`);
+      const gLegend = svg.append('g').attr('transform', `translate(${padding}, ${padding + treemapSize + legendGap})`);
 
-      // preparar dados
+      // preparar dados base
       const vals = values.map(v => (isFinite(v) ? Number(v) : 0));
       const totalVal = vals.reduce((s,x) => s + x, 0);
       const baseNodes = labels.map((lbl,i) => ({ name: String(lbl), value: vals[i] }));
-      baseNodes.forEach((n,i) => { if (!window._treemapColorMap[n.name]) window._treemapColorMap[n.name] = palette[i % palette.length]; });
 
-      // ----------------------- mini-balanceamento (tamanho mínimo perceptível) -----------------------
-      const totalPixelArea = Math.max(1, treemapWidth * treemapHeight);
-      const defaultMinPixel = Math.round(totalPixelArea * 0.0015);
-      const minPixel = typeof window._treemapOptions.minPixel === 'number' ? window._treemapOptions.minPixel : Math.min(64, Math.max(16, defaultMinPixel));
-      const valuePerPixel = totalVal / totalPixelArea || 1;
-      const minValueUnit = minPixel * valuePerPixel;
+      // construir mapa de cores consistente: se já existir, manter; senão, atribuir
+      baseNodes.forEach((n,i) => {
+        if (!window._treemapColorMap[n.name]) window._treemapColorMap[n.name] = palette[i % palette.length];
+      });
 
-      const adjustedNodes = baseNodes.map(n => ({ name: n.name, value: n.value, adjValue: Math.max(n.value, minValueUnit) }));
-
+      // seleção ativa: se set vazio = todos ativos; se não vazio = apenas ativos
       const activeSet = window._treemapActive;
-      const effectiveNodes = (activeSet.size === 0) ? adjustedNodes : adjustedNodes.filter(n => activeSet.has(n.name));
+      const effectiveNodes = (activeSet.size === 0)
+        ? baseNodes
+        : baseNodes.filter(n => activeSet.has(n.name));
 
-      const sumEffective = effectiveNodes.reduce((s,d) => s + Math.max(0,d.adjValue), 0);
+      // para 'area verde' clarear cores
+      const isGreen = (canvasId === 'chart-areaverd');
+
+      // caso sem dados (ou após exclusões não restarem nós)
+      const sumEffective = effectiveNodes.reduce((s,d) => s + Math.max(0,d.value), 0);
       if (sumEffective === 0) {
-        gTreemap.append('rect').attr('width', treemapWidth).attr('height', treemapHeight).attr('fill','#f2f2f2');
+        gTreemap.append('rect').attr('width', treemapSize).attr('height', treemapSize).attr('fill','#f2f2f2');
         gTreemap.append('text').attr('x',12).attr('y',22).attr('fill','#333').attr('font-size',12).text('Sem dados visíveis');
         const emptyState = { canvasId, destroy: ()=>{ svg.remove(); } };
         if (canvasId === 'chart-area') chartArea = emptyState;
@@ -251,14 +230,23 @@
         return;
       }
 
-      const nodes = effectiveNodes.map(n => ({ name: n.name, value: n.value, adjValue: n.adjValue, color: (canvasId === 'chart-areaverd') ? lightenHex(window._treemapColorMap[n.name], 0.36) : window._treemapColorMap[n.name] })).sort((a,b) => b.adjValue - a.adjValue);
+      // preparar nodes com cor e valor
+      const nodes = effectiveNodes.map(n => ({
+        name: n.name,
+        value: n.value,
+        color: isGreen ? lightenHex(window._treemapColorMap[n.name], 0.38) : window._treemapColorMap[n.name]
+      })).sort((a,b) => b.value - a.value);
 
-      // D3 treemap (retangular, largura maior)
-      const root = d3.hierarchy({ children: nodes }).sum(d => Math.max(0,d.adjValue)).sort((a,b)=>b.value - a.value);
-      d3.treemap().size([treemapWidth, treemapHeight]).paddingInner(3).round(true)(root);
+      // D3 treemap (squarified)
+      const root = d3.hierarchy({ children: nodes }).sum(d => Math.max(0,d.value)).sort((a,b)=>b.value - a.value);
+      // aplicar possível expansão para melhorar visualização de caixas pequenas
+      const expandFactor = window._treemapOptions._expanded ? (window._treemapOptions.expandFactor || 1.6) : 1.0;
+      const minTreemap = Math.round(220 * expandFactor);
+      const computedTreemapSize = Math.min(width - padding*2, Math.max(treemapSize, minTreemap));
+      d3.treemap().size([computedTreemapSize, computedTreemapSize]).paddingInner(2).round(true)(root);
       const leaves = root.leaves();
 
-      // tooltip
+      // tooltip DOM (cria se não existir)
       let tooltip = document.getElementById(canvasId + '-tooltip');
       if (!tooltip) {
         tooltip = document.createElement('div');
@@ -276,6 +264,38 @@
         el.appendChild(tooltip);
       }
 
+      // botão de expansão (pequeno, simbólico) — adiciona funcionalidade de "zoom" no treemap para facilitar visualização de quadrados muito pequenos
+      let expandBtn = el.querySelector('.treemap-expand-btn');
+      if (!expandBtn) {
+        expandBtn = document.createElement('button');
+        expandBtn.className = 'treemap-expand-btn';
+        expandBtn.title = 'Expandir/Reduzir gráfico';
+        expandBtn.style.position = 'absolute';
+        expandBtn.style.right = '8px';
+        expandBtn.style.top = '8px';
+        expandBtn.style.width = '32px';
+        expandBtn.style.height = '32px';
+        expandBtn.style.borderRadius = '6px';
+        expandBtn.style.border = '1px solid rgba(0,0,0,0.08)';
+        expandBtn.style.background = 'rgba(255,255,255,0.9)';
+        expandBtn.style.cursor = 'pointer';
+        expandBtn.style.display = 'flex';
+        expandBtn.style.alignItems = 'center';
+        expandBtn.style.justifyContent = 'center';
+        expandBtn.style.fontSize = '14px';
+        expandBtn.style.zIndex = 2000;
+        expandBtn.textContent = '⤢'; // símbolo de expansão
+        expandBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          window._treemapOptions._expanded = !window._treemapOptions._expanded;
+          // visual feedback
+          expandBtn.style.background = window._treemapOptions._expanded ? 'rgba(0,150,136,0.12)' : 'rgba(255,255,255,0.9)';
+          try { window.webmapStats && window.webmapStats.updateStats(); } catch(e){}
+        });
+        el.appendChild(expandBtn);
+      }
+
+
       // desenhar folhas
       const leafG = gTreemap.selectAll('g.leaf').data(leaves, d => d.data.name);
       const leafEnter = leafG.enter().append('g').attr('class','leaf').attr('transform', d => `translate(${d.x0}, ${d.y0})`);
@@ -286,14 +306,14 @@
         .attr('stroke', 'rgba(0,0,0,0.06)')
         .on('mousemove', function(event, d){
           tooltip.style.display = 'block';
-          const pct = Math.round(d.data.value / (nodes.reduce((s,n)=>s + n.value,0) || 1) * 100);
-          tooltip.textContent = `${d.data.name} — ${Number(d.data.value).toLocaleString('pt-BR')} (${pct}%)`;
+          tooltip.textContent = `${d.data.name} — ${Number(d.data.value).toLocaleString('pt-BR')} (${Math.round(d.value / root.value * 100)}%)`;
           const bbox = el.getBoundingClientRect();
           tooltip.style.left = (event.clientX - bbox.left + 12) + 'px';
           tooltip.style.top = (event.clientY - bbox.top + 12) + 'px';
         })
         .on('mouseout', function(){ tooltip.style.display = 'none'; })
         .on('click', function(event, d){
+          // tenta centralizar camada no mapa
           if (!window.map) return;
           const targetId = d.data.name;
           let found = null;
@@ -311,6 +331,7 @@
           } catch(e){}
         });
 
+      // rótulos internos apenas para áreas maiores (texto em preto para máxima legibilidade)
       leafEnter.filter(d => (d.x1 - d.x0) > 48 && (d.y1 - d.y0) > 18)
         .append('text')
         .attr('x', 6).attr('y', 14)
@@ -318,99 +339,111 @@
         .attr('font-size', 11)
         .text(d => d.data.name);
 
-      // ------------------------- legenda em DUAS COLUNAS com barra lateral (scroll) -------------------------
-      // remover legenda antiga
-      const oldLegend = el.querySelector('.treemap-legend-container');
-      if (oldLegend && oldLegend.parentNode) oldLegend.parentNode.removeChild(oldLegend);
+      // ------------------------- legenda compacta e clicável -------------------------
+      // construiremos legendas em N colunas (dinâmico) para caber todos os itens
+      const legendAll = labels.map((lbl,i) => ({
+        name: String(lbl),
+        color: window._treemapColorMap[String(lbl)] || palette[i % palette.length],
+        value: vals[i]
+      })).sort((a,b)=> b.value - a.value);
 
-      const legendContainer = document.createElement('div');
-      legendContainer.className = 'treemap-legend-container';
-      legendContainer.style.boxSizing = 'border-box';
-      legendContainer.style.width = (baseWidth - padding*2) + 'px';
-      legendContainer.style.marginTop = legendGap + 'px';
-      legendContainer.style.padding = '6px 4px';
-      legendContainer.style.display = 'flex';
-      legendContainer.style.gap = '12px';
-      legendContainer.style.alignItems = 'flex-start';
-      legendContainer.style.justifyContent = 'space-between';
-      // tornar o container rolável verticalmente (barra lateral "mini")
-      const maxLegendHeight = Math.max(120, Math.min(420, Math.floor(desiredLegendHeight)));
-      legendContainer.style.maxHeight = maxLegendHeight + 'px';
-      legendContainer.style.overflowY = 'auto';
+      // determinar número de colunas: mais colunas para larguras maiores
+      const maxCols = Math.min(3, Math.max(1, Math.floor(width / 200)));
+      const cols = maxCols;
+      const itemsPerCol = Math.ceil(legendAll.length / cols);
+      const rowHeight = 24; // aumentado para dar mais espaço vertical entre itens
+      const colWidth = Math.floor((width - padding*2 - (cols - 1) * 12) / cols);
 
-      // criar 2 colunas
-      const cols = 2;
-      const itemsPer = Math.ceil(labels.length / cols);
-      for (let c = 0; c < cols; c++){
-        const col = document.createElement('div');
-        col.style.display = 'flex';
-        col.style.flexDirection = 'column';
-        col.style.gap = '6px';
-        col.style.flex = '1 1 48%';
-        col.style.minWidth = '120px';
+      // limpar grupo de legenda
+      gLegend.selectAll('*').remove();
 
-        const start = c * itemsPer;
-        const end = Math.min(start + itemsPer, labels.length);
-        for (let i = start; i < end; i++){
-          const lbl = labels[i];
-          const val = vals[i];
-          const color = window._treemapColorMap[String(lbl)] || palette[i % palette.length];
+      // ---------------------- caixa informativa sobre campos ----------------------
+      // colocada como texto SVG acima da legenda para explicar o significado de ID / Área / Área Verd
+      const infoText = `ID: identificador único da feição — Área: área total (unidade conforme origem dos dados) — Área Verd: área coberta por vegetação`;
+      gLegend.append('text')
+        .attr('x', 0)
+        .attr('y', -6)
+        .attr('fill', '#333')
+        .attr('font-size', 11)
+        .text(infoText);
 
-          const item = document.createElement('div');
-          item.className = 'legend-item';
-          item.style.display = 'flex';
-          item.style.justifyContent = 'space-between';
-          item.style.alignItems = 'center';
-          item.style.padding = '4px 6px';
-          item.style.cursor = 'pointer';
 
-          const left = document.createElement('div');
-          left.style.display = 'flex';
-          left.style.alignItems = 'center';
-          left.style.gap = '8px';
 
-          const sw = document.createElement('div');
-          sw.style.width = '14px';
-          sw.style.height = '14px';
-          sw.style.borderRadius = '2px';
-          sw.style.background = color;
-          sw.style.border = '1px solid rgba(0,0,0,0.06)';
+      // criar grupos por coluna
+      for (let c = 0; c < cols; c++) {
+        const colGroup = gLegend.append('g').attr('transform', `translate(${c * colWidth}, 0)`);
+        const start = c * itemsPerCol;
+        const end = Math.min(start + itemsPerCol, legendAll.length);
+        for (let i = start; i < end; i++) {
+          const it = legendAll[i];
+          const idxInCol = i - start;
+          const gRow = colGroup.append('g').attr('class','legend-row').attr('transform', `translate(0, ${idxInCol * rowHeight})`);
+          // opacidade conforme ativo/inativo
+          const isActive = (activeSet.size === 0) ? true : activeSet.has(it.name);
+          const opacity = isActive ? 1 : 0.32;
+          // retângulo cor
+          gRow.append('rect')
+            .attr('x', 0).attr('y', -12).attr('width', 12).attr('height', 12)
+            .attr('fill', it.color)
+            .attr('stroke','rgba(0,0,0,0.06)')
+            .attr('opacity', opacity)
+            .style('cursor','pointer')
+            .on('click', () => {
+              // alterna seleção global e redesenha (via updateStats)
+              if (window._treemapActive.has(it.name)) window._treemapActive.delete(it.name);
+              else window._treemapActive.add(it.name);
+              // se ficar vazio, manter como "nenhum filtro" — isto faz mostrar todos
+              if (window._treemapActive.size === 0) {
+                // nothing
+              }
+              // chama updateStats para redesenhar ambos os treemaps
+              try { window.webmapStats && window.webmapStats.updateStats(); } catch(e){}
+            });
 
-          const name = document.createElement('div');
-          name.textContent = String(lbl);
-          name.style.fontSize = '12px';
-          name.style.color = '#000';
-          name.style.whiteSpace = 'nowrap';
-          name.style.overflow = 'hidden';
-          name.style.textOverflow = 'ellipsis';
-          name.style.maxWidth = '180px';
+          // texto nome (preto) compacto
+          gRow.append('text')
+            .attr('x', 18).attr('y', -2)
+            .attr('fill', '#000')
+            .attr('font-size', 12)
+            .attr('opacity', opacity)
+            .text(it.name)
+            .style('cursor','pointer')
+            .on('click', () => {
+              if (window._treemapActive.has(it.name)) window._treemapActive.delete(it.name);
+              else window._treemapActive.add(it.name);
+              try { window.webmapStats && window.webmapStats.updateStats(); } catch(e){}
+            });
 
-          left.appendChild(sw);
-          left.appendChild(name);
-
-          const right = document.createElement('div');
-          right.textContent = shortNumber(val);
-          right.style.fontSize = '12px';
-          right.style.color = '#000';
-
-          item.appendChild(left);
-          item.appendChild(right);
-
-          item.addEventListener('click', function(){
-            if (window._treemapActive.has(lbl)) window._treemapActive.delete(lbl);
-            else window._treemapActive.add(lbl);
-            try { window.webmapStats && window.webmapStats.updateStats(); } catch(e){}
-          });
-
-          col.appendChild(item);
+          // valor curto alinhado à direita da coluna
+          gRow.append('text')
+            .attr('x', colWidth - 6)
+            .attr('y', -2)
+            .attr('text-anchor','end')
+            .attr('fill', '#000')
+            .attr('font-size', 12)
+            .attr('opacity', opacity)
+            .text(shortNumber(it.value))
+            .style('cursor','pointer')
+            .on('click', () => {
+              if (window._treemapActive.has(it.name)) window._treemapActive.delete(it.name);
+              else window._treemapActive.add(it.name);
+              try { window.webmapStats && window.webmapStats.updateStats(); } catch(e){}
+            });
         }
-        legendContainer.appendChild(col);
       }
-
-      el.appendChild(legendContainer);
+      // ------------------------------------------------------------------------------------
 
       // salvar estado para destruição futura
-      const state = { canvasId, svgNode: svg.node(), legendNode: legendContainer, destroy: function(){ try { if (tooltip && tooltip.parentElement) tooltip.parentElement.removeChild(tooltip); if (this.legendNode && this.legendNode.parentElement) this.legendNode.parentElement.removeChild(this.legendNode); svg.remove(); } catch(e){} } };
+      const state = {
+        canvasId,
+        svgNode: svg.node(),
+        destroy: function(){
+          try {
+            if (tooltip && tooltip.parentElement) tooltip.parentElement.removeChild(tooltip);
+            svg.remove();
+          } catch(e){}
+        }
+      };
       if (canvasId === 'chart-area') chartArea = state;
       if (canvasId === 'chart-areaverd') chartAreaVerd = state;
 
