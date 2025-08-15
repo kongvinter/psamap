@@ -1,4 +1,4 @@
-/js.seguro
+//js.seguro
 
 /// js/stats.js — painel de estatísticas com destaque de camadas únicas
 (function(){
