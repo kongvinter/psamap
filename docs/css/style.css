@@ -209,28 +209,3 @@ html, body {
   max-height: 80%;
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
-
-/* botão de fechar para overlay de gráfico expandido */
-.chart-overlay .close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 50%;
-  background: #ff4d4d;
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 5100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  transition: background 0.2s ease;
-}
-
-.chart-overlay .close-btn:hover {
-  background: #e60000;
-}

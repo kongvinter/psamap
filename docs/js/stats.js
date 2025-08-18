@@ -1,4 +1,4 @@
-// js/stats.js — painel de estatísticas com destaque de camadas únicas
+/// js/stats.js — painel de estatísticas com destaque de camadas únicas
 (function(){
 
   function parseNumber(v){
@@ -269,10 +269,10 @@
           options: options
         });
     
-        document.getElementById('closeOverlay').addEventListener('click', () => {
-          document.getElementById('chartOverlay').classList.add('hidden');
+        // fechar ao clicar no fundo
+        overlay.addEventListener('click', () => overlay.remove());
       });
-        
+    });
     
     const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
