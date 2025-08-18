@@ -156,3 +156,12 @@ html, body {
 #stats-panel * {
   z-index: inherit;
 }
+/* por padrão a logo é clicável */
+#logo-link {
+  pointer-events: auto;
+}
+
+/* quando o painel está ativo, logo deixa de ser clicável */
+#stats-panel:not(.hidden) ~ #logo-link {
+  pointer-events: none;
+}

@@ -271,12 +271,12 @@
     });
 
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
-
-    document.addEventListener('click', (event) => {
-      if (!panel.contains(event.target) && !btn.contains(event.target)) {
-        closePanel();
-      }
-    });
+  //retirado clicar fora > fechar painel
+  //document.addEventListener('click', (event) => {
+  //   if (!panel.contains(event.target) && !btn.contains(event.target)) {
+  //    closePanel();
+  //   }
+  // });
 
     if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
     if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
