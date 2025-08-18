@@ -1,9 +1,9 @@
-:root{
-  --bg-1: #fdf6e3; /* fundo claro */
-  --accent: #f5f5f5; /* cor neutra para botões */
-  --panel-bg: rgba(255, 255, 255, 0.85); /* painel branco semi-transparente */
-  --text-color: #111; /* texto preto */
-  --btn-hover: #e0e0e0; /* hover do botão */
+:root {
+  --bg-1: #fdf6e3;
+  --accent: #f5f5f5;
+  --panel-bg: rgba(255, 255, 255, 0.85);
+  --text-color: #111;
+  --btn-hover: #e0e0e0;
 }
 
 /* Regras globais */
@@ -23,7 +23,7 @@ html, body {
   z-index: 0;
 }
 
-/* Botão Estatísticas moderno e clean */
+/* Botão Estatísticas */
 #stats-btn {
   position: absolute;
   top: 150px;
@@ -33,7 +33,6 @@ html, body {
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 10px 14px;
-  font-family: 'Inter', sans-serif;
   font-size: 14px;
   color: var(--text-color);
   cursor: pointer;
@@ -47,38 +46,36 @@ html, body {
 
 /* Painel lateral moderno */
 #stats-panel {
-  position: absolute;
-  z-index: 1001;
+  position: absolute; /* evita criar stacking context */
   top: 160px;
   left: 10px;
-  font-family: 'Inter', 'Helvetica Neue', sans-serif;
-  background: var(--panel-bg); /* fundo branco semi-transparente */
-  color: var(--text-color); /* texto preto */
-  padding: 24px;
-  max-width: 520px;
   width: 360px;
-  max-height: 70vh; /* altura máxima para scroll */
-  overflow-y: auto; /* scroll vertical */
+  max-width: 520px;
+  max-height: 70vh;
+  padding: 24px;
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  background: var(--panel-bg);
+  color: var(--text-color);
   border-radius: 12px;
+  overflow-y: auto;
   box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 0 30px rgba(0,0,0,0.05);
-  backdrop-filter: blur(6px); /* efeito embacado */
+  backdrop-filter: blur(6px);
+  z-index: 3000; /* acima do mapa, mas abaixo da logo fixa (se desejar a logo sempre visível) */
 }
 
 /* Cabeçalhos e textos */
 #stats-panel h2, #stats-panel h4 {
-  color: var(--text-color);
   font-size: 16px;
-  margin: 0 0 12px 0;
   font-weight: 600;
+  margin: 0 0 12px 0;
 }
 #stats-panel p, #stats-panel li {
-  color: var(--text-color);
   font-size: 14px;
   line-height: 1.6;
 }
 
 /* Botões internos do painel */
-#stats-panel .list-controls button, #stats-panel button {
+#stats-panel button {
   background: var(--accent);
   border: 1px solid #ccc;
   color: var(--text-color);
@@ -87,7 +84,7 @@ html, body {
   cursor: pointer;
   transition: background 0.2s ease, transform 0.12s ease;
 }
-#stats-panel .list-controls button:hover, #stats-panel button:hover {
+#stats-panel button:hover {
   background: var(--btn-hover);
   transform: translateY(-2px);
 }
@@ -119,18 +116,16 @@ html, body {
 /* Classe utilitária */
 .hidden { display: none !important; }
 
-/* container link fixo no canto inferior esquerdo */
-#logo-link{
+/* Logo fixa fora do painel */
+#logo-link {
   position: fixed;
   left: 12px;
   bottom: 12px;
-  z-index: 2000;
+  z-index: 4000; /* acima do painel */
   display: inline-block;
-  pointer-events: auto; /* garante clique mesmo que imagem tenha pointer-events:none */
+  pointer-events: auto;
 }
-
-/* imagem da logo */
-#logo-link img#map-logo{
+#logo-link img#map-logo {
   width: 110px;
   height: auto;
   display: block;
@@ -138,69 +133,37 @@ html, body {
   -webkit-user-drag: none;
   opacity: 0.95;
   filter: drop-shadow(0 6px 18px rgba(0,0,0,0.12));
-  pointer-events: auto;
 }
 
-/* responsivo */
+/* Responsivo logo */
 @media (max-width:700px){
   #logo-link{ left: 8px; bottom: 8px; }
   #logo-link img#map-logo{ width: 80px; }
 }
-/* força o painel de estatísticas a ficar acima da logo fixa */
-#stats-panel {
-  z-index: 3001 !important; /* maior que #logo-link (2000) */
-  position: absolute;       /* garante posicionamento para z-index funcionar */
-}
 
-/* assegura que conteúdo interno não seja coberto por filhos com z-index baixo */
-#stats-panel * {
-  z-index: inherit;
-}
-/* por padrão a logo é clicável */
-#logo-link {
-  pointer-events: auto;
-}
-
-/* quando o painel está ativo, logo deixa de ser clicável */
-#stats-panel:not(.hidden) ~ #logo-link {
-  pointer-events: none;
-}
-
-.chart-section {
-  position: relative;
-  margin-bottom: 20px;
-}
-
+/* Gráficos internos */
+.chart-section { position: relative; margin-bottom: 20px; }
 .chart-section h4 {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .expand-btn {
-  width: 18px;
-  height: 18px;
-  margin-left: 8px;
-  cursor: pointer;
-  opacity: 0.7;
+  width: 18px; height: 18px;
+  cursor: pointer; opacity: 0.7;
   transition: opacity 0.2s ease;
 }
-.expand-btn:hover {
-  opacity: 1;
-}
+.expand-btn:hover { opacity: 1; }
 
-/* overlay de gráfico expandido */
+/* Overlay de gráfico expandido */
 .chart-overlay {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
   background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   z-index: 5000;
 }
-
 .chart-overlay canvas {
   background: #fff;
   border-radius: 12px;
@@ -213,6 +176,9 @@ html, body {
 #stats-summary p {
   margin: 4px 0;
   font-weight: 500;
-  color: var(--text-color);
 }
 
+/* Importante: garante que o logo não seja afetada pelo painel */
+#stats-panel * {
+  z-index: inherit;
+}
