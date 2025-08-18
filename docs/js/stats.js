@@ -269,10 +269,10 @@
           options: options
         });
     
-        // fechar ao clicar no fundo
-        overlay.addEventListener('click', () => overlay.remove());
-      });
-    });
+        document.getElementById('closeOverlay').addEventListener('click', function() {
+          document.getElementById('chartOverlay').classList.add('hidden');
+        });
+        
     
     const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
