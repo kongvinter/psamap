@@ -269,9 +269,9 @@
           options: options
         });
     
-        document.getElementById('closeOverlay').addEventListener('click', function() {
+        document.getElementById('closeOverlay').addEventListener('click', () => {
           document.getElementById('chartOverlay').classList.add('hidden');
-        });
+      });
         
     
     const labels = contributions.map(c => c.id);
