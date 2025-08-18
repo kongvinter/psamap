@@ -231,7 +231,49 @@
       if (chartRefName === 'chart-area') chartArea = chart;
       if (chartRefName === 'chart-areaverd') chartAreaVerd = chart;
     }
-
+    document.querySelectorAll('.expand-btn').forEach(btn => {
+      btn.addEventListener('click', function(){
+        const targetId = this.getAttribute('data-target');
+        const originalCanvas = document.getElementById(targetId);
+    
+        // cria overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'chart-overlay';
+    
+        // cria novo canvas para expandido
+        const newCanvas = document.createElement('canvas');
+        overlay.appendChild(newCanvas);
+        document.body.appendChild(overlay);
+    
+        // copia dados do gráfico original
+        const originalChart = Chart.getChart(originalCanvas);
+        const data = JSON.parse(JSON.stringify(originalChart.data));
+        const options = JSON.parse(JSON.stringify(originalChart.options));
+    
+        // aplica "explodir" fatias (pie/donut)
+        if (options.type === 'pie' || options.type === 'doughnut') {
+          options.plugins = options.plugins || {};
+          options.plugins.datalabels = { color: '#111' }; // opcional
+          options.plugins.tooltip = { enabled: true };
+    
+          options.elements = options.elements || {};
+          options.elements.arc = {
+            offset: 12 // separa as fatias
+          };
+        }
+    
+        // cria gráfico expandido
+        new Chart(newCanvas, {
+          type: originalChart.config.type,
+          data: data,
+          options: options
+        });
+    
+        // fechar ao clicar no fundo
+        overlay.addEventListener('click', () => overlay.remove());
+      });
+    });
+    
     const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
     const valuesAreaVerd = contributions.map(c => c.areaverd);
