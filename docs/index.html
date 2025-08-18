@@ -51,15 +51,22 @@
             <p><strong>Área verde total:</strong> <span id="total-green">0</span> ha</p>
 
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-              <div style="flex:1 1 240px;">
-                <h4>Contribuição por Área</h4>
-                <canvas id="chart-area" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+                <div style="flex:1 1 240px; position:relative;">
+                  <h4>Contribuição por Área</h4>
+                  <img src="docs/images/expandgraf.svg" class="expand-btn" data-target="chart-area" 
+                       alt="Expandir gráfico" 
+                       style="position:absolute; top:4px; right:4px; width:20px; height:20px; cursor:pointer; z-index:10;">
+                  <canvas id="chart-area" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+                </div>
+              
+                <div style="flex:1 1 240px; position:relative;">
+                  <h4>Contribuição por Área Verde</h4>
+                  <img src="docs/images/expandgraf.svg" class="expand-btn" data-target="chart-areaverd" 
+                       alt="Expandir gráfico" 
+                       style="position:absolute; top:4px; right:4px; width:20px; height:20px; cursor:pointer; z-index:10;">
+                  <canvas id="chart-areaverd" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
+                </div>
               </div>
-              <div style="flex:1 1 240px;">
-                <h4>Contribuição por Área Verde</h4>
-                <canvas id="chart-areaverd" style="width:100%;height:180px;display:block;border-radius:6px;padding:4px"></canvas>
-              </div>
-            </div>
 
             <div class="list-controls" style="margin-top:10px;">
              <button id="sort-green" style="margin-right:6px;">Ordenar por Área Verde</button>
@@ -84,22 +91,7 @@
     aria-label="Águas de Joinville — Programa Águas para Sempre">
     <img id="map-logo" src="images/LOGOPSA.png" alt="LOGOPSA — Águas de Joinville">
 </a>
-<div class="chart-section">
-    <h4>
-      Gráfico 1
-      <img src="docs/images/expandgraf.svg" class="expand-btn" data-target="chart1" alt="Expandir gráfico">
-    </h4>
-    <canvas id="chart1"></canvas>
-  </div>
-  
-  <div class="chart-section">
-    <h4>
-      Gráfico 2
-      <img src="docs/images/expandgraf.svg" class="expand-btn" data-target="chart2" alt="Expandir gráfico">
-    </h4>
-    <canvas id="chart2"></canvas>
-  </div>
-  
+
         <!-- SCRIPTS qgis2web -->
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
