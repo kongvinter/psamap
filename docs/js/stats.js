@@ -1,6 +1,4 @@
-//js.seguro
-
-/// js/stats.js — painel de estatísticas com destaque de camadas únicas
+// js/stats.js — painel de estatísticas com destaque de camadas únicas
 (function(){
 
   function parseNumber(v){
@@ -20,7 +18,7 @@
       if (layer.feature && layer.feature.properties) {
         const props = layer.feature.properties;
         const id = props.id || props.name;
-        if (id && !seenIds.has(id) && 'Área' in props && 'Área Verd' in props) {
+        if (id && !seenIds.has(id) && ('Área' in props || 'Area' in props || 'AREA' in props) && ('Área Verd' in props || 'Area Verd' in props || 'AREA_VERD' in props)) {
           layers.push(layer);
           seenIds.add(id);
         }
@@ -30,6 +28,68 @@
 
     map.eachLayer(traverse);
     return layers;
+  }
+
+  // encontra uma layer pelo id (string) no mapa
+  function findLayerById(map, targetId){
+    let found = null;
+    function traverse(layer){
+      if (!layer || found) return;
+      if (layer.feature && layer.feature.properties) {
+        const props = layer.feature.properties;
+        const id = props.id || props.name;
+        if (id !== undefined && String(id) === String(targetId)) {
+          found = layer;
+          return;
+        }
+      }
+      if (layer._layers) Object.values(layer._layers).forEach(traverse);
+    }
+    map.eachLayer(traverse);
+    return found;
+  }
+
+  // centraliza e dá zoom na layer encontrada; faz highlight temporário
+  function focusOnLayer(map, layer){
+    if (!map || !layer) return;
+    try {
+      if (layer.getBounds && typeof layer.getBounds === 'function') {
+        const bounds = layer.getBounds();
+        if (bounds && bounds.isValid && bounds.isValid()) {
+          map.fitBounds(bounds.pad(0.15), { maxZoom: 16 });
+        } else {
+          // se bounds inválido tentar centroid
+          const center = bounds.getCenter ? bounds.getCenter() : null;
+          if (center) map.setView(center, 14);
+        }
+      } else if (layer.getLatLng && typeof layer.getLatLng === 'function') {
+        const latlng = layer.getLatLng();
+        map.setView(latlng, 18);
+      } else if (layer._latlng) {
+        map.setView(layer._latlng, 18);
+      } else if (layer.getCenter && typeof layer.getCenter === 'function') {
+        const c = layer.getCenter();
+        map.setView(c, 16);
+      } else {
+        // fallback para mapa atual
+        map.setView(map.getCenter(), map.getZoom());
+      }
+
+      // highlight temporário
+      if (layer.setStyle) {
+        const orig = layer._originalStyle || {...(layer.options || {})};
+        try {
+          layer.setStyle({ color: '#00FF00', weight: 4, fillOpacity: 0.35, fillColor: '#00FF00' });
+        } catch(e){}
+        setTimeout(() => {
+          try {
+            if (layer.setStyle && orig) layer.setStyle(orig);
+          } catch(e){}
+        }, 2000);
+      }
+    } catch(e){
+      console.warn('Erro ao focar layer:', e);
+    }
   }
 
   let chartArea = null, chartAreaVerd = null;
@@ -56,8 +116,8 @@
       const id = props.id || props.name;
       if (!id || seenIds.has(id)) return;
 
-      const area = parseNumber(props['Área']);
-      const areaverd = parseNumber(props['Área Verd']);
+      const area = parseNumber(props['Área'] ?? props['Area'] ?? props['AREA']);
+      const areaverd = parseNumber(props['Área Verd'] ?? props['Area Verd'] ?? props['AREA_VERD']);
 
       if (area > 0 || areaverd > 0) {
         contributions.push({ id, area, areaverd });
@@ -66,16 +126,18 @@
       }
     });
 
-    // Destacar camadas no mapa
+    // Destacar camadas no mapa (apenas estilo temporário enquanto painel aberto)
     layersToHighlight.forEach(layer => {
       if (layer.setStyle) {
-        if (!layer._originalStyle) layer._originalStyle = {...layer.options};
-        layer.setStyle({
-          color: '#FF0000',
-          weight: 3,
-          fillColor: '#FF0000',
-          fillOpacity: 0.3
-        });
+        if (!layer._originalStyle) layer._originalStyle = {...(layer.options || {})};
+        try {
+          layer.setStyle({
+            color: '#FF0000',
+            weight: 3,
+            fillColor: '#FF0000',
+            fillOpacity: 0.3
+          });
+        } catch(e) {}
         highlightedLayers.push(layer);
       }
     });
@@ -94,12 +156,21 @@
     const propsListEl = document.getElementById('props-list');
 
     if (contributions.length === 0){
-      if (totalPropsEl) totalPropsEl.textContent = '0';
-      if (totalAreaEl) totalAreaEl.textContent = '—';
-      if (totalGreenEl) totalGreenEl.textContent = '—';
+      if (totalPropsEl && totalPropsEl.parentElement) totalPropsEl.parentElement.style.display = 'none';
+      if (totalAreaEl && totalAreaEl.parentElement) totalAreaEl.parentElement.style.display = 'none';
+      if (totalGreenEl && totalGreenEl.parentElement) totalGreenEl.parentElement.style.display = 'none';
       if (propsListEl) propsListEl.innerHTML = '';
+
+      if (chartArea){ chartArea.destroy(); chartArea = null; }
+      if (chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd = null; }
+
+      window.webmapStats.contributions = [];
       return;
     }
+
+    if (totalPropsEl && totalPropsEl.parentElement) totalPropsEl.parentElement.style.display = '';
+    if (totalAreaEl && totalAreaEl.parentElement) totalAreaEl.parentElement.style.display = '';
+    if (totalGreenEl && totalGreenEl.parentElement) totalGreenEl.parentElement.style.display = '';
 
     const totalArea = contributions.reduce((sum,c) => sum + c.area, 0);
     const totalAreaVerd = contributions.reduce((sum,c) => sum + c.areaverd, 0);
@@ -117,14 +188,15 @@
       });
     }
 
-    // Construir gráficos
-    function buildChart(canvasId, values, labels){
+    // Construir gráficos com evento de clique que focaliza a feição
+    function buildChart(canvasId, values, labels, chartRefName){
       const el = document.getElementById(canvasId);
       if (!el) return;
       const ctx = el.getContext('2d');
 
-      if (canvasId === 'chart-area' && chartArea){ chartArea.destroy(); chartArea = null; }
-      if (canvasId === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd = null; }
+      // destruir chart anterior
+      if (chartRefName === 'chart-area' && chartArea){ chartArea.destroy(); chartArea = null; }
+      if (chartRefName === 'chart-areaverd' && chartAreaVerd){ chartAreaVerd.destroy(); chartAreaVerd = null; }
 
       const cfg = {
         type: 'pie',
@@ -135,20 +207,40 @@
           '#FD79A8', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E',
           '#E17055', '#81ECEC', '#74B9FF', '#00B894', '#E84393'
         ]}] },
-        options: { plugins: { legend: { position: 'bottom' } } }
+        options: {
+          plugins: { legend: { position: 'bottom' } },
+          onClick: function(evt) {
+            // 'this' é o chart instance
+            const points = this.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            if (!points || points.length === 0) return;
+            const idx = points[0].index;
+            const id = labels[idx];
+            const map = window.map || window._map || null;
+            if (!map) return;
+            const layer = findLayerById(map, id);
+            if (layer) {
+              focusOnLayer(map, layer);
+            } else {
+              console.warn('Layer não encontrada para ID:', id);
+            }
+          }
+        }
       };
 
       const chart = new Chart(ctx, cfg);
-      if (canvasId === 'chart-area') chartArea = chart;
-      if (canvasId === 'chart-areaverd') chartAreaVerd = chart;
+      if (chartRefName === 'chart-area') chartArea = chart;
+      if (chartRefName === 'chart-areaverd') chartAreaVerd = chart;
     }
 
     const labels = contributions.map(c => c.id);
     const valuesArea = contributions.map(c => c.area);
     const valuesAreaVerd = contributions.map(c => c.areaverd);
 
-    buildChart('chart-area', valuesArea, labels);
-    buildChart('chart-areaverd', valuesAreaVerd, labels);
+    buildChart('chart-area', valuesArea, labels, 'chart-area');
+    buildChart('chart-areaverd', valuesAreaVerd, labels, 'chart-areaverd');
+
+    // Exportar contribuições para inspeção externa e botões
+    window.webmapStats.contributions = contributions;
   }
 
   window.webmapStats = { updateStats, contributions: [] };
@@ -162,18 +254,15 @@
 
     if (!btn || !panel) return;
 
-    // Abrir painel
     function openPanel() {
       panel.classList.remove('hidden');
       window.webmapStats.updateStats();
     }
 
-    // Fechar painel
     function closePanel() {
       panel.classList.add('hidden');
     }
 
-    // Toggle botão
     btn.addEventListener('click', () => {
       panel.classList.toggle('hidden');
       if (!panel.classList.contains('hidden')) {
@@ -181,21 +270,17 @@
       }
     });
 
-    // Fechar botão X
     if (closeBtn) closeBtn.addEventListener('click', closePanel);
 
-    // Fechar clicando fora
     document.addEventListener('click', (event) => {
       if (!panel.contains(event.target) && !btn.contains(event.target)) {
         closePanel();
       }
     });
 
-    // Ordenação
     if(sortAreaBtn) sortAreaBtn.addEventListener('click', () => window.webmapStats.updateStats('area'));
     if(sortGreenBtn) sortGreenBtn.addEventListener('click', () => window.webmapStats.updateStats('areaverd'));
 
-    // Inicialmente escondido
     panel.classList.add('hidden');
   });
 
