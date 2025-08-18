@@ -121,7 +121,7 @@ html, body {
   position: fixed;
   left: 12px;
   bottom: 12px;
-  z-index: 4000; /* acima do painel */
+  z-index: 5000; /* acima do painel */
   display: inline-block;
   pointer-events: auto;
 }
@@ -176,9 +176,4 @@ html, body {
 #stats-summary p {
   margin: 4px 0;
   font-weight: 500;
-}
-
-/* Importante: garante que o logo não seja afetada pelo painel */
-/*#stats-panel * {
-  z-index: inherit;
 }
