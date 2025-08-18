@@ -125,7 +125,21 @@
         layersToHighlight.push(layer);
       }
     });
+   // após acumular contributions
+  const totalProps = contributions.length;
+  const totalArea = contributions.reduce((sum, c) => sum + c.area, 0);
+  const totalGreen = contributions.reduce((sum, c) => sum + c.areaverd, 0);
 
+  const avgAreaEl = document.getElementById('avg-area');
+  const avgGreenEl = document.getElementById('avg-green');
+
+  if(totalProps > 0) {
+  avgAreaEl.innerHTML = `<strong>Área média:</strong> ${(totalArea / totalProps).toFixed(2)} ha`;
+  avgGreenEl.innerHTML = `<strong>Média Área Verde:</strong> ${(totalGreen / totalProps).toFixed(2)} ha`;
+} else {
+  avgAreaEl.innerHTML = `<strong>Área média:</strong> —`;
+  avgGreenEl.innerHTML = `<strong>Média Área Verde:</strong> —`;
+}
     // Destacar camadas no mapa (apenas estilo temporário enquanto painel aberto)
     layersToHighlight.forEach(layer => {
       if (layer.setStyle) {
