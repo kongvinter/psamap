@@ -179,6 +179,6 @@ html, body {
 }
 
 /* Importante: garante que o logo não seja afetada pelo painel */
-#stats-panel * {
+/*#stats-panel * {
   z-index: inherit;
 }
