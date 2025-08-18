@@ -146,3 +146,13 @@ html, body {
   #logo-link{ left: 8px; bottom: 8px; }
   #logo-link img#map-logo{ width: 80px; }
 }
+/* força o painel de estatísticas a ficar acima da logo fixa */
+#stats-panel {
+  z-index: 3001 !important; /* maior que #logo-link (2000) */
+  position: absolute;       /* garante posicionamento para z-index funcionar */
+}
+
+/* assegura que conteúdo interno não seja coberto por filhos com z-index baixo */
+#stats-panel * {
+  z-index: inherit;
+}
