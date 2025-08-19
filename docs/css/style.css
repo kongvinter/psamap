@@ -58,7 +58,7 @@ html, body {
 /* Painel lateral moderno */
 #stats-panel {
   position: absolute; /* evita criar stacking context */
-  top: 130px;
+  top: 90px;
   left: 10px;
   width: 360px;
   max-width: 520px;
