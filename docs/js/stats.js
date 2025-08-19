@@ -88,73 +88,36 @@
   let chartArea = null, chartAreaVerd = null;
   let highlightedLayers = [];
   let contributions = [];
-  
-  // tenta extrair a cor do layer (várias fontes possíveis)
-    function getLayerColor(layer){
-      if (!layer) return null;
-      const opt = layer.options || {};
-      const props = (layer.feature && layer.feature.properties) || {};
 
-  // propriedades comuns em Leaflet / qgis2web
-    const candidates = [
-      opt.fillColor, opt.fill, opt.color, opt.stroke, opt.weight && opt.color, // opções
-      props.fillColor, props.fill, props.color, props.stroke, props.cor, props.fill_color
-  ];
-
-    for (let c of candidates){
-      if (typeof c === 'string' && c.trim() !== '') return c;
-  }
-
-  // tenta extrair de estilo original salvo
-    if (layer._originalStyle){
-      const o = layer._originalStyle;
-      if (o.fillColor) return o.fillColor;
-      if (o.color) return o.color;
-  }
-
-  return null;
-}
-
-// paleta de fallback caso não exista cor no layer
-    const fallbackPalette = [
-    '#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FECA57','#FF9FF3','#54A0FF','#5F27CD',
-    '#00D2D3','#FF9F43','#EE5A6F','#0ABDE3','#10AC84','#F79F1F','#A3CB38','#FD79A8',
-    '#6C5CE7','#A29BFE','#FD79A8','#FDCB6E','#E17055','#81ECEC','#74B9FF','#00B894','#E84393'
-];
-
-    function updateStats(orderBy = null){
-      const map = window.map || window._map || null;
-      if (!map) return;
+  function updateStats(orderBy = null){
+    const map = window.map || window._map || null;
+    if (!map) return;
 
     const features = getTargetLayers(map);
 
-  // restaura estilos anteriores
     highlightedLayers.forEach(layer => {
-    if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
+      if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
     });
     highlightedLayers = [];
     contributions = [];
     const seenIds = new Set();
+    const layersToHighlight = [];
 
-  // atualizar colorMap a partir das layers encontradas
     features.forEach(layer => {
       const props = layer.feature.properties;
       const id = props.id || props.name;
       if (!id || seenIds.has(id)) return;
 
-      const area = parseNumber(props['Área'] || props['Area'] || props['AREA']);
-      const areaverd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['AREA_VERD']);
-
-    // registra cor mesmo que área zero (para manter consistência visual)
-      const color = getLayerColor(layer) || null;
-      if (color) colorMap[String(id)] = color;
-    // se não há cor, mantemos o que já estava no colorMap (não sobrescrever com null)
+      const area = parseNumber(props['Área'] ?? props['Area'] ?? props['AREA']);
+      const areaverd = parseNumber(props['Área Verd'] ?? props['Area Verd'] ?? props['AREA_VERD']);
 
       if (area > 0 || areaverd > 0) {
-      contributions.push({ id, area, areaverd });
-      seenIds.add(id);
-    }
-  });
+        contributions.push({ id, area, areaverd });
+        seenIds.add(id);
+        layersToHighlight.push(layer);
+      }
+    });
+
     // Cálculo de médias
     const totalProps = contributions.length;
     const totalArea = contributions.reduce((sum, c) => sum + c.area, 0);
