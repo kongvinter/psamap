@@ -32,20 +32,24 @@ html, body {
   background: var(--accent);
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: var(--text-color);
+  padding: 10px;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.12s ease;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Hover e efeito de clique */
 #stats-btn:hover {
   background: var(--btn-hover);
   transform: translateY(-2px);
 }
-#stats-btn img {
-  display: block;
-  width: 44px;  /* ajuste o tamanho conforme desejar */
+
+/* Ajusta tamanho do ícone */
+.stats-icon {
+  width: 44px;
   height: 44px;
 }
 /* Painel lateral moderno */
