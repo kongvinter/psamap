@@ -88,35 +88,7 @@
   let chartArea = null, chartAreaVerd = null;
   let highlightedLayers = [];
   let contributions = [];
-
-  function updateStats(orderBy = null){
-    const map = window.map || window._map || null;
-    if (!map) return;
-
-    const features = getTargetLayers(map);
-
-    highlightedLayers.forEach(layer => {
-      if (layer._originalStyle && layer.setStyle) layer.setStyle(layer._originalStyle);
-    });
-    highlightedLayers = [];
-    contributions = [];
-    const seenIds = new Set();
-    const layersToHighlight = [];
-
-    features.forEach(layer => {
-      const props = layer.feature.properties;
-      const id = props.id || props.name;
-      if (!id || seenIds.has(id)) return;
-
-      const area = parseNumber(props['Área'] ?? props['Area'] ?? props['AREA']);
-      const areaverd = parseNumber(props['Área Verd'] ?? props['Area Verd'] ?? props['AREA_VERD']);
-
-      if (area > 0 || areaverd > 0) {
-        contributions.push({ id, area, areaverd });
-        seenIds.add(id);
-        layersToHighlight.push(layer);
-      }
-    });
+  
   // tenta extrair a cor do layer (várias fontes possíveis)
     function getLayerColor(layer){
       if (!layer) return null;
@@ -170,8 +142,8 @@
       const id = props.id || props.name;
       if (!id || seenIds.has(id)) return;
 
-      const area = parseNumber(props['Área'] ?? props['Area'] ?? props['AREA']);
-      const areaverd = parseNumber(props['Área Verd'] ?? props['Area Verd'] ?? props['AREA_VERD']);
+      const area = parseNumber(props['Área'] || props['Area'] || props['AREA']);
+      const areaverd = parseNumber(props['Área Verd'] || props['Area Verd'] || props['AREA_VERD']);
 
     // registra cor mesmo que área zero (para manter consistência visual)
       const color = getLayerColor(layer) || null;
