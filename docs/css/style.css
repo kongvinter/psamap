@@ -47,10 +47,13 @@ html, body {
   transform: translateY(-2px);
 }
 
-/* Ajusta tamanho do ícone */
-.stats-icon {
-  width: 44px;
-  height: 44px;
+/* Ajuste do ícone SVG responsivo */
+#stats-btn img {
+  width: 2em;    /* tamanho relativo ao botão */
+  height: 2em;   /* mantém proporção quadrada */
+  max-width: 40px; /* limita para não crescer demais em telas grandes */
+  max-height: 40px;
+  display: block;
 }
 /* Painel lateral moderno */
 #stats-panel {
