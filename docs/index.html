@@ -161,84 +161,15 @@
         <script src="data/LimiteDivisaJoinvilleGaruva_47.js"></script>
         <script src="data/ETACubato_48.js"></script>
         <script>
-         <!-- Abaixo: código de criação do mapa (mantive o seu trecho original e a variável `map`) -->
-        <script>
-        var highlightLayer;
-        function highlightFeature(e) {
-            highlightLayer = e.target;
 
-            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
-              highlightLayer.setStyle({
-                color: '#328ed6',
-              });
-            } else {
-              highlightLayer.setStyle({
-                fillColor: '#328ed6',
-                fillOpacity: 1
-              });
-            }
-        }
-        var map = L.map('map', {
-            zoomControl:false, maxZoom:28, minZoom:4
-        }).fitBounds([[-26.294505253594416,-49.2522271107897],[-25.99724277527894,-48.71141664091046]]);
-        var hash = new L.Hash(map);
-        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
-        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-        
-        
-        function removeEmptyRowsFromPopupContent(content, feature) {
-         var tempDiv = document.createElement('div');
-         tempDiv.innerHTML = content;
-         var rows = tempDiv.querySelectorAll('tr');
-         for (var i = 0; i < rows.length; i++) {
-             var td = rows[i].querySelector('td.visible-with-data');
-             var key = td ? td.id : '';
-             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
-                 rows[i].parentNode.removeChild(rows[i]);
-             }
-         }
-         return tempDiv.innerHTML;
-        }
-        </script>
-
-        <!-- Chart.js (biblioteca) -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap"></script>
-        <!-- script de estatísticas (versão adaptada) -->
-        <script src="js/stats.js"></script>
-
-        <!-- controlador UI: abrir/fechar e ordenação -->
-        <script>
-        (function(){
-          const openBtn = document.getElementById('stats-btn');
-          const panel = document.getElementById('stats-panel');
-          const closeBtn = document.getElementById('close-panel');
-
-          function show(){ panel.style.display = 'block'; if (window.webmapStats && typeof window.webmapStats.updateStats === 'function') window.webmapStats.updateStats(); }
-          function hide(){ panel.style.display = 'none'; }
-
-          openBtn.addEventListener('click', show);
-          closeBtn.addEventListener('click', hide);
-          document.addEventListener('keydown', function(e){ if (e.key === 'Escape') hide(); });
-
-          document.getElementById('sort-green').addEventListener('click', function(){ if (window.webmapStats && window.webmapStats.sortBy) window.webmapStats.sortBy('areaverd'); });
-          document.getElementById('sort-total').addEventListener('click', function(){ if (window.webmapStats && window.webmapStats.sortBy) window.webmapStats.sortBy('area'); });
-        })();
-
-    
-		function addClassToPopupIfMedia(content, popup) {
-			var tempDiv = document.createElement('div');
-			tempDiv.innerHTML = content;
-			if (tempDiv.querySelector('td img')) {
-				popup._contentNode.classList.add('media');
 					// Delay to force the redraw
 					setTimeout(function() {
 						popup.update();
 					}, 10);
-			} else {
+                 else {
 				popup._contentNode.classList.remove('media');
 			}
-		}
+
         var title = new L.Control({'position':'topright'});
         title.onAdd = function (map) {
             this._div = L.DomUtil.create('div', 'info');
@@ -3378,5 +3309,140 @@
         });       
         setBounds();
         </script>
+        <!-- Inicialização do mapa e UI -->
+<script>
+    // ===============================
+    // Funções auxiliares
+    // ===============================
+    function highlightFeature(e) {
+        var layer = e.target;
+        if (layer.feature.geometry.type === 'LineString' || layer.feature.geometry.type === 'MultiLineString') {
+            layer.setStyle({ color: '#328ed6' });
+        } else {
+            layer.setStyle({ fillColor: '#328ed6', fillOpacity: 1 });
+        }
+    }
+  
+    function removeEmptyRowsFromPopupContent(content, feature) {
+        var tempDiv = document.createElement('div');
+        tempDiv.innerHTML = content;
+        var rows = tempDiv.querySelectorAll('tr');
+        for (var i = 0; i < rows.length; i++) {
+            var td = rows[i].querySelector('td.visible-with-data');
+            var key = td ? td.id : '';
+            if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                rows[i].parentNode.removeChild(rows[i]);
+            }
+        }
+        return tempDiv.innerHTML;
+    }
+  
+    // ===============================
+    // Criação do mapa
+    // ===============================
+    var map = L.map('map', {
+        zoomControl: false,
+        maxZoom: 28,
+        minZoom: 4
+    }).fitBounds([[-26.2945, -49.2522], [-25.9972, -48.7114]]);
+  
+    new L.Hash(map);
+  
+    map.attributionControl.setPrefix(
+        '<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; ' +
+        '<a href="https://leafletjs.com">Leaflet</a> &middot; ' +
+        '<a href="https://qgis.org">QGIS</a>'
+    );
+  
+    // ===============================
+    // Criação de panes e camadas
+    // ===============================
+    map.createPane('pane_LimiteDivisaJoinvilleGaruva_47');
+    map.getPane('pane_LimiteDivisaJoinvilleGaruva_47').style.zIndex = 447;
+    map.getPane('pane_LimiteDivisaJoinvilleGaruva_47').style['mix-blend-mode'] = 'normal';
+  
+    var layer_LimiteDivisaJoinvilleGaruva_47 = L.geoJson(json_LimiteDivisaJoinvilleGaruva_47, {
+        attribution: '',
+        interactive: false,
+        pane: 'pane_LimiteDivisaJoinvilleGaruva_47',
+        style: style_LimiteDivisaJoinvilleGaruva_47_0,
+        onEachFeature: pop_LimiteDivisaJoinvilleGaruva_47
+    });
+    map.addLayer(layer_LimiteDivisaJoinvilleGaruva_47);
+  
+    map.createPane('pane_ETACubato_48');
+    map.getPane('pane_ETACubato_48').style.zIndex = 448;
+    map.getPane('pane_ETACubato_48').style['mix-blend-mode'] = 'normal';
+  
+    function style_ETACubato_48_0(feature) {
+        return {
+            pane: 'pane_ETACubato_48',
+            rotationAngle: 0,
+            rotationOrigin: 'center center',
+            icon: L.icon({
+                iconUrl: 'markers/ETACubato_48.svg',
+                iconSize: [26.6, 26.6]
+            }),
+            interactive: true
+        };
+    }
+  
+    function pop_ETACubato_48(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: function(e) {
+                for (var i in e.target._eventParents) {
+                    if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                }
+            }
+        });
+  
+        var popupContent = '<table>' +
+            '<tr><td colspan="2">' + (feature.properties['id'] != null ? feature.properties['id'] : '') + '</td></tr>' +
+            '<tr><td colspan="2">' + (feature.properties['Localizaç'] != null ? feature.properties['Localizaç'] : '') + '</td></tr>' +
+            '</table>';
+  
+        var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+        layer.bindPopup(content, { maxHeight: 400 });
+    }
+  
+    var layer_ETACubato_48 = L.geoJson(json_ETACubato_48, {
+        attribution: '',
+        interactive: true,
+        pane: 'pane_ETACubato_48',
+        onEachFeature: pop_ETACubato_48,
+        pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, style_ETACubato_48_0(feature));
+        }
+    });
+    map.addLayer(layer_ETACubato_48);
+  
+    // ===============================
+    // Controlador da UI (painel de stats)
+    // ===============================
+    (function(){
+        const openBtn = document.getElementById('stats-btn');
+        const panel = document.getElementById('stats-panel');
+        const closeBtn = document.getElementById('close-panel');
+        if(openBtn && panel && closeBtn){
+            openBtn.addEventListener('click', ()=>panel.style.display='block');
+            closeBtn.addEventListener('click', ()=>panel.style.display='none');
+            document.addEventListener('keydown', e=>{ if(e.key==='Escape') panel.style.display='none'; });
+        }
+  
+        // Ordenação de stats
+        const sortGreen = document.getElementById('sort-green');
+        const sortTotal = document.getElementById('sort-total');
+        if(sortGreen && window.webmapStats && window.webmapStats.sortBy){
+            sortGreen.addEventListener('click', ()=>window.webmapStats.sortBy('areaverd'));
+        }
+        if(sortTotal && window.webmapStats && window.webmapStats.sortBy){
+            sortTotal.addEventListener('click', ()=>window.webmapStats.sortBy('area'));
+        }
+    })();
+  </script>
+
     </body>
 </html>
